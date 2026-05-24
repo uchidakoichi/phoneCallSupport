@@ -9,7 +9,7 @@
                  script-src 'self' 'unsafe-inline' https://vercel.live;
                  style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
                  font-src https://fonts.gstatic.com data:;
-                 connect-src 'self' https://generativelanguage.googleapis.com https://api.openai.com https://vercel.live;
+                 connect-src 'self' https://generativelanguage.googleapis.com https://api.openai.com https://api.groq.com https://vercel.live;
                  img-src 'self' data:;
                  frame-src https://vercel.live;">
   <title>電話かけ出しサポート♡ | ふじキュン</title>
@@ -709,7 +709,8 @@
     <div class="fC_form-group">
       <label class="fC_label" for="fC_provider">AIプロバイダー</label>
       <select class="fC_select" id="fC_provider" aria-describedby="fC_providerHint">
-        <option value="gemini">✨ Google Gemini（無料！おすすめキュン♡）</option>
+        <option value="groq">🚀 Groq（完全無料・クレカ不要！おすすめキュン♡）</option>
+        <option value="gemini">✨ Google Gemini</option>
         <option value="openai">💬 OpenAI（ChatGPT系）</option>
       </select>
       <p class="fC_provider-hint" id="fC_providerHint"></p>
@@ -719,7 +720,7 @@
         APIキー <span style="color:var(--error)" aria-hidden="true">*</span>
       </label>
       <input type="password" class="fC_input" id="fC_apiKey"
-             placeholder="AIzaSy... または sk-..."
+             placeholder="gsk_...（Groq）/ AIzaSy...（Gemini）/ sk-...（OpenAI）"
              autocomplete="off" spellcheck="false">
     </div>
     <div class="fC_modal-actions">
@@ -745,7 +746,7 @@
   /* ── State ─────────────────────────────────── */
   const S = {
     apiKey:     "",
-    provider:   "gemini",
+    provider:   "groq",
     callerType: "external",
     keigoLevel: "standard",
     purpose:    "",
@@ -800,7 +801,7 @@
   /* ── Storage ────────────────────────────────── */
   function loadStorage() {
     S.apiKey   = localStorage.getItem(LS_KEY)  || "";
-    S.provider = localStorage.getItem(LS_PROV) || "gemini";
+    S.provider = localStorage.getItem(LS_PROV) || "groq";
     try { S.history = JSON.parse(localStorage.getItem(LS_HIST) || "[]"); }
     catch (_) { S.history = []; }
   }
@@ -895,8 +896,9 @@
         return res.json().catch(function () { return {}; }).then(function (err) {
           var code = (err.error && err.error.code) || res.status;
           var msg  = (err.error && err.error.message) || "";
+          console.error("[Gemini API Error] code:", code, "message:", msg, "full:", JSON.stringify(err));
           if (code === 400 && msg.indexOf("API_KEY") >= 0) throw new Error("INVALID_KEY");
-          if (code === 429 || res.status === 429) throw new Error("RATE_LIMIT");
+          if (code === 429 || res.status === 429) throw new Error("RATE_LIMIT:" + msg);
           throw new Error("API_ERROR:" + code);
         });
       }
@@ -909,6 +911,40 @@
                  data.candidates[0].content.parts &&
                  data.candidates[0].content.parts[0] &&
                  data.candidates[0].content.parts[0].text;
+      if (!text) throw new Error("EMPTY_RESPONSE");
+      return text;
+    });
+  }
+
+  function callGroq(key, prompt) {
+    return fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + key,
+      },
+      body: JSON.stringify({
+        model: "llama-3.3-70b-versatile",
+        messages: [{ role: "user", content: prompt }],
+        max_tokens: 800,
+        temperature: 0.72,
+      }),
+    }).then(function (res) {
+      if (!res.ok) {
+        return res.json().catch(function () { return {}; }).then(function (err) {
+          console.error("[Groq API Error]", JSON.stringify(err));
+          if (res.status === 401) throw new Error("INVALID_KEY");
+          if (res.status === 429) throw new Error("RATE_LIMIT");
+          throw new Error("API_ERROR:" + res.status);
+        });
+      }
+      return res.json();
+    }).then(function (data) {
+      var text = data &&
+                 data.choices &&
+                 data.choices[0] &&
+                 data.choices[0].message &&
+                 data.choices[0].message.content;
       if (!text) throw new Error("EMPTY_RESPONSE");
       return text;
     });
@@ -948,9 +984,9 @@
   }
 
   function callAPI(prompt) {
-    return S.provider === "openai"
-      ? callOpenAI(S.apiKey, prompt)
-      : callGemini(S.apiKey, prompt);
+    if (S.provider === "openai") return callOpenAI(S.apiKey, prompt);
+    if (S.provider === "groq")   return callGroq(S.apiKey, prompt);
+    return callGemini(S.apiKey, prompt);
   }
 
   /* 429 発生時に60秒待って1回だけリトライ（レート制限は1分単位でリセット） */
@@ -1087,8 +1123,9 @@
   /* ── Modal ──────────────────────────────────── */
   function updateProviderHint() {
     var hints = {
-      gemini: "🌟 Google AI Studioで無料取得できます。無料枠内は完全無料キュン♡",
-      openai: "💳 OpenAIの従量課金APIキーです。少量なら低コストキュン♡",
+      groq:   "🚀 console.groq.com で無料取得！クレカ不要・1日14,400回まで完全無料キュン♡",
+      gemini: "🌟 Google AI Studioで取得できます（日本ではプリペイド課金が必要キュン）",
+      openai: "💳 OpenAIの従量課金APIキーです。クレジット購入が必要キュン",
     };
     D.provHint.textContent = hints[D.provider.value] || "";
   }
