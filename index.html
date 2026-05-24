@@ -953,13 +953,13 @@
       : callGemini(S.apiKey, prompt);
   }
 
-  /* 429 発生時に3秒待って1回だけリトライ */
+  /* 429 発生時に60秒待って1回だけリトライ（レート制限は1分単位でリセット） */
   function callWithRetry(prompt, retries) {
     if (retries === undefined) retries = 1;
     return callAPI(prompt).catch(function (err) {
       if (err.message === "RATE_LIMIT" && retries > 0) {
-        toast("⏳ レート制限キュン… 3秒後に自動リトライするね♡", "warning", 3000);
-        return new Promise(function (resolve) { setTimeout(resolve, 3000); })
+        toast("⏳ レート制限キュン… 60秒後に自動リトライするね♡", "warning", 61000);
+        return new Promise(function (resolve) { setTimeout(resolve, 60000); })
           .then(function () { return callWithRetry(prompt, retries - 1); });
       }
       throw err;
