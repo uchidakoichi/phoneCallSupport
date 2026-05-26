@@ -9,7 +9,7 @@
                  script-src 'self' 'unsafe-inline' https://vercel.live;
                  style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
                  font-src https://fonts.gstatic.com data:;
-                 connect-src 'self' https://generativelanguage.googleapis.com https://api.openai.com https://api.groq.com https://vercel.live;
+                 connect-src 'self' https://generativelanguage.googleapis.com https://api.openai.com https://api.groq.com https://api.hume.ai https://vercel.live;
                  img-src 'self' data:;
                  frame-src https://vercel.live;">
   <title>電話かけ出しサポート♡ | ふじキュン</title>
@@ -643,6 +643,94 @@
     50%     { transform: scale(1.4) rotate(-5deg); filter: drop-shadow(0 0 18px gold); }
   }
   .fC_growth-avatar.leveling { animation: lvUp 0.65s ease; }
+
+  /* ── Practice Panel ── */
+  .fC_practice {
+    display: none;
+    background: linear-gradient(135deg, #0d1b2a, #1b2838, #0d1b2a) !important;
+    border-radius: var(--radius) !important;
+    padding: 1.1em !important;
+    color: #fff;
+    border: 1px solid rgba(99,179,237,0.25);
+    box-shadow: 0 4px 32px rgba(13,27,42,0.5);
+  }
+  .fC_practice.visible { display: block; }
+  .fC_prac-header {
+    display: flex; align-items: center; justify-content: space-between;
+    font-size: 0.9rem; font-weight: 700; color: #63b3ed;
+    margin-bottom: 0.6em;
+  }
+  .fC_prac-close {
+    background: none; border: none; color: rgba(255,255,255,0.4);
+    font-size: 1.1rem; cursor: pointer; padding: 0 0.2em;
+  }
+  .fC_prac-close:hover { color: #fff; }
+  .fC_prac-hint {
+    font-size: 0.75rem; color: rgba(255,255,255,0.5); margin-bottom: 0.75em;
+  }
+  .fC_prac-script {
+    background: rgba(255,255,255,0.07);
+    border-radius: 8px; padding: 0.75em;
+    font-size: 0.88rem; line-height: 1.7;
+    color: rgba(255,255,255,0.88);
+    margin-bottom: 0.9em;
+    max-height: 140px; overflow-y: auto;
+    white-space: pre-wrap;
+  }
+  .fC_prac-controls { display: flex; align-items: center; gap: 0.7em; margin-bottom: 0.75em; }
+  .fC_rec-btn {
+    background: linear-gradient(135deg, #3182ce, #2b6cb0);
+    color: #fff; border: none; border-radius: 10px;
+    padding: 0.65em 1.3em; font-family: inherit; font-size: 0.9rem;
+    font-weight: 700; cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 12px rgba(49,130,206,0.4);
+  }
+  .fC_rec-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(49,130,206,0.5); }
+  .fC_rec-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+  .fC_rec-btn.recording {
+    background: linear-gradient(135deg, #e53e3e, #c53030);
+    box-shadow: 0 2px 12px rgba(229,62,62,0.5);
+    animation: recPulse 1.5s infinite;
+  }
+  @keyframes recPulse {
+    0%,100% { box-shadow: 0 2px 12px rgba(229,62,62,0.5); }
+    50%      { box-shadow: 0 2px 24px rgba(229,62,62,0.8); }
+  }
+  .fC_rec-status { font-size: 0.78rem; color: #fc8181; display: flex; align-items: center; gap: 0.4em; }
+  .fC_rec-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: #e53e3e; display: inline-block;
+    animation: recPulse 1s infinite;
+  }
+  .fC_prac-feedback {
+    display: flex; gap: 0.7em; align-items: flex-start;
+    background: linear-gradient(135deg, #fff0f5, #fce4ec);
+    border-radius: 10px; padding: 0.8em;
+    margin-bottom: 0.75em;
+  }
+  .fC_prac-feedback-icon { font-size: 1.6rem; flex-shrink: 0; }
+  .fC_prac-feedback-text { font-size: 0.83rem; color: #880e4f; line-height: 1.6; }
+  .fC_prac-scores { margin-bottom: 0.75em; display: flex; flex-direction: column; gap: 0.4em; }
+  .fC_score-row { display: flex; align-items: center; gap: 0.5em; }
+  .fC_score-label { font-size: 0.72rem; color: rgba(255,255,255,0.7); min-width: 72px; }
+  .fC_score-bar-wrap {
+    flex: 1; background: rgba(255,255,255,0.12);
+    border-radius: 6px; height: 6px; overflow: hidden;
+  }
+  .fC_score-bar { height: 100%; border-radius: 6px; transition: width 0.8s cubic-bezier(.34,1.56,.64,1); }
+  .fC_score-val { font-size: 0.7rem; color: #fff; min-width: 30px; text-align: right; }
+  .fC_prac-transcript {
+    background: rgba(255,255,255,0.06); border-radius: 8px;
+    padding: 0.6em 0.75em; margin-bottom: 0.75em;
+  }
+  .fC_prac-transcript-label { font-size: 0.65rem; color: rgba(255,255,255,0.45); margin-bottom: 0.3em; }
+  .fC_prac-transcript-text  { font-size: 0.82rem; color: rgba(255,255,255,0.8); line-height: 1.55; }
+  .fC_prac-btns { display: flex; gap: 0.5em; flex-wrap: wrap; }
+  .fC_act-btn--practice {
+    background: linear-gradient(135deg, #553c9a, #6b46c1) !important;
+    color: #fff !important; border-color: transparent !important;
+  }
   </style>
 </head>
 <body>
@@ -754,10 +842,26 @@
       <div class="fC_step-label"><span aria-hidden="true">📜</span> ふじキュン♡の台本ができたよ！</div>
       <div class="fC_script-box" id="fC_scriptBox" role="region" aria-label="生成された電話台本"></div>
       <div class="fC_result-actions">
-        <button class="fC_act-btn fC_act-btn--regen" id="fC_regenBtn" aria-label="台本を作り直す">🔄 作り直す</button>
-        <button class="fC_act-btn fC_act-btn--copy"  id="fC_copyBtn"  aria-label="台本をコピー">📋 コピー</button>
-        <button class="fC_act-btn fC_act-btn--print" id="fC_printBtn" aria-label="台本を印刷する" title="印刷">🖨️</button>
+        <button class="fC_act-btn fC_act-btn--regen"     id="fC_regenBtn"    aria-label="台本を作り直す">🔄 作り直す</button>
+        <button class="fC_act-btn fC_act-btn--practice"  id="fC_practiceBtn" aria-label="音読練習モードを開く">🎤 音読練習</button>
+        <button class="fC_act-btn fC_act-btn--copy"      id="fC_copyBtn"     aria-label="台本をコピー">📋 コピー</button>
+        <button class="fC_act-btn fC_act-btn--print"     id="fC_printBtn"    aria-label="台本を印刷する" title="印刷">🖨️</button>
       </div>
+    </div>
+
+    <!-- Practice panel -->
+    <div class="fC_practice" id="fC_practice">
+      <div class="fC_prac-header">
+        <span>🎤 音読練習モード</span>
+        <button class="fC_prac-close" id="fC_pracClose" aria-label="練習パネルを閉じる">✕</button>
+      </div>
+      <div class="fC_prac-hint">台本を見ながら声に出して読んでキュン♡ 録音→停止で声を分析するよ！</div>
+      <div class="fC_prac-script" id="fC_pracScript"></div>
+      <div class="fC_prac-controls">
+        <button class="fC_rec-btn" id="fC_recBtn">🎤 録音開始</button>
+        <div class="fC_rec-status" id="fC_recStatus"></div>
+      </div>
+      <div id="fC_pracResult"></div>
     </div>
   </div>
 
@@ -805,6 +909,15 @@
              placeholder="gsk_...（Groq）/ AIzaSy...（Gemini）/ sk-...（OpenAI）"
              autocomplete="off" spellcheck="false">
     </div>
+    <div class="fC_form-group">
+      <label class="fC_label" for="fC_humeKey">
+        🎤 Hume AI APIキー <span style="color:var(--text-muted);font-weight:400;">（音読練習用・任意）</span>
+      </label>
+      <input type="password" class="fC_input" id="fC_humeKey"
+             placeholder="Hume AIのAPIキーを入力（任意）"
+             autocomplete="off" spellcheck="false">
+      <p class="fC_provider-hint">🎙 入力すると音読練習で声の感情・抑揚を分析できるキュン♡ <a href="https://platform.hume.ai" target="_blank" rel="noopener noreferrer">platform.hume.ai</a> で無料取得</p>
+    </div>
     <div class="fC_modal-actions">
       <button class="fC_btn-secondary" id="fC_cancelBtn">キャンセル</button>
       <button class="fC_btn-danger"    id="fC_clearBtn">🗑️ 削除</button>
@@ -825,6 +938,7 @@
   const LS_PROV   = "fujiCall_provider";
   const LS_HIST   = "fujiCall_history";
   const LS_STATS  = "fujiCall_stats";
+  const LS_HUME   = "fujiCall_humeKey";
 
   /* ── Level definitions ──────────────────────── */
   var LEVELS = [
@@ -983,6 +1097,7 @@
   /* ── State ─────────────────────────────────── */
   const S = {
     apiKey:     "",
+    humeKey:    "",
     provider:   "groq",
     callerType: "external",
     keigoLevel: "standard",
@@ -1012,12 +1127,20 @@
     modal:     $("fC_modal"),
     provider:  $("fC_provider"),
     provHint:  $("fC_providerHint"),
-    apiKey:    $("fC_apiKey"),
-    saveBtn:   $("fC_saveBtn"),
-    cancelBtn: $("fC_cancelBtn"),
-    clearBtn:  $("fC_clearBtn"),
-    toasts:    $("fC_toasts"),
-    settings:  $("fC_settingsBtn"),
+    apiKey:      $("fC_apiKey"),
+    humeKey:     $("fC_humeKey"),
+    saveBtn:     $("fC_saveBtn"),
+    cancelBtn:   $("fC_cancelBtn"),
+    clearBtn:    $("fC_clearBtn"),
+    toasts:      $("fC_toasts"),
+    settings:    $("fC_settingsBtn"),
+    practiceBtn: $("fC_practiceBtn"),
+    practice:    $("fC_practice"),
+    recBtn:      $("fC_recBtn"),
+    recStatus:   $("fC_recStatus"),
+    pracScript:  $("fC_pracScript"),
+    pracResult:  $("fC_pracResult"),
+    pracClose:   $("fC_pracClose"),
   };
 
   /* ── Toast ──────────────────────────────────── */
@@ -1038,16 +1161,20 @@
   /* ── Storage ────────────────────────────────── */
   function loadStorage() {
     S.apiKey   = localStorage.getItem(LS_KEY)  || "";
+    S.humeKey  = localStorage.getItem(LS_HUME) || "";
     S.provider = localStorage.getItem(LS_PROV) || "groq";
     try { S.history = JSON.parse(localStorage.getItem(LS_HIST) || "[]"); }
     catch (_) { S.history = []; }
   }
 
-  function saveKey(key, provider) {
+  function saveKey(key, provider, humeKey) {
     S.apiKey   = key;
     S.provider = provider;
+    S.humeKey  = humeKey || "";
     localStorage.setItem(LS_KEY,  key);
     localStorage.setItem(LS_PROV, provider);
+    if (humeKey) localStorage.setItem(LS_HUME, humeKey);
+    else localStorage.removeItem(LS_HUME);
   }
 
   function addHistory(entry) {
@@ -1372,6 +1499,7 @@
 
   function openModal(isFirst) {
     D.apiKey.value   = S.apiKey;
+    D.humeKey.value  = S.humeKey;
     D.provider.value = S.provider;
     updateProviderHint();
     D.cancelBtn.style.visibility = isFirst ? "hidden" : "visible";
@@ -1436,26 +1564,258 @@
   D.cancelBtn.addEventListener("click",  closeModal);
 
   D.saveBtn.addEventListener("click", function () {
-    var key = D.apiKey.value.trim();
+    var key  = D.apiKey.value.trim();
+    var hume = D.humeKey.value.trim();
     if (!key) { toast("🔑 APIキーを入力してね♡", "warning"); return; }
-    saveKey(key, D.provider.value);
+    saveKey(key, D.provider.value, hume);
     closeModal();
-    toast("✅ APIキーを保存したキュン♡ 台本が作れるよ！", "success");
+    var msg = hume ? "✅ APIキーとHume AIキーを保存したキュン♡ 音読練習もできるよ！" : "✅ APIキーを保存したキュン♡ 台本が作れるよ！";
+    toast(msg, "success");
     mascot("APIキーの設定完了キュン♡ 電話の目的を入力して台本を作ろう！");
   });
 
   D.clearBtn.addEventListener("click", function () {
     localStorage.removeItem(LS_KEY);
     localStorage.removeItem(LS_PROV);
+    localStorage.removeItem(LS_HUME);
     S.apiKey   = "";
-    S.provider = "gemini";
+    S.humeKey  = "";
+    S.provider = "groq";
     D.apiKey.value   = "";
-    D.provider.value = "gemini";
+    D.humeKey.value  = "";
+    D.provider.value = "groq";
     closeModal();
     toast("🗑️ APIキーを削除したキュン♡", "warning");
   });
 
   D.provider.addEventListener("change", updateProviderHint);
+
+  /* ── Practice mode ──────────────────────────── */
+  var mediaRec = null, audioChunks = [], isRecording = false;
+
+  function openPractice() {
+    D.pracScript.textContent = S.script;
+    D.pracResult.innerHTML   = "";
+    D.recStatus.textContent  = "";
+    D.recBtn.textContent     = "🎤 録音開始";
+    D.recBtn.className       = "fC_rec-btn";
+    D.recBtn.disabled        = false;
+    D.recBtn.style.display   = "";
+    D.practice.classList.add("visible");
+    D.practice.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    mascot("台本を見ながら声に出して読んでキュン♡ 録音ボタンを押して始めてね！");
+  }
+
+  function toggleRecording() {
+    if (!isRecording) startRecording(); else stopRecording();
+  }
+
+  function startRecording() {
+    navigator.mediaDevices.getUserMedia({ audio: true }).then(function(stream) {
+      audioChunks = [];
+      mediaRec = new MediaRecorder(stream, { mimeType: MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm" : "audio/ogg" });
+      mediaRec.ondataavailable = function(e) { if (e.data.size > 0) audioChunks.push(e.data); };
+      mediaRec.onstop = function() {
+        stream.getTracks().forEach(function(t) { t.stop(); });
+        var blob = new Blob(audioChunks, { type: mediaRec.mimeType });
+        analyzeRecording(blob);
+      };
+      mediaRec.start();
+      isRecording = true;
+      D.recBtn.textContent = "⏹ 録音停止";
+      D.recBtn.classList.add("recording");
+      D.recStatus.innerHTML = '<span class="fC_rec-dot"></span> 録音中...';
+      mascot("録音中キュン♡ 台本を声に出して読んでね！終わったら停止を押してキュン！");
+    }).catch(function() {
+      toast("🎤 マイクが使えないキュン… ブラウザの設定でマイクを許可してね♡", "error", 5000);
+    });
+  }
+
+  function stopRecording() {
+    if (mediaRec && isRecording) {
+      mediaRec.stop();
+      isRecording = false;
+      D.recBtn.textContent = "⏳ 分析中キュン…";
+      D.recBtn.classList.remove("recording");
+      D.recBtn.disabled    = true;
+      D.recStatus.textContent = "";
+      mascot("ちょっと待ってキュン♡ ふじキュンが声を分析してるよ〜！");
+    }
+  }
+
+  function analyzeRecording(blob) {
+    var p1 = (S.provider === "groq" && S.apiKey)
+      ? transcribeWithWhisper(blob)
+      : Promise.resolve("");
+    var p2 = S.humeKey
+      ? analyzeWithHume(blob)
+      : Promise.resolve(null);
+
+    Promise.all([p1, p2]).then(function(res) {
+      renderPracticeResult(res[0], res[1]);
+    }).catch(function(err) {
+      console.error("[Practice]", err);
+      D.recBtn.textContent = "🎤 録音開始";
+      D.recBtn.disabled    = false;
+      toast("😅 分析に失敗したキュン… もう一度試してね♡", "error");
+    });
+  }
+
+  function transcribeWithWhisper(blob) {
+    var fd = new FormData();
+    fd.append("file", blob, "rec.webm");
+    fd.append("model", "whisper-large-v3");
+    fd.append("language", "ja");
+    return fetch("https://api.groq.com/openai/v1/audio/transcriptions", {
+      method: "POST",
+      headers: { "Authorization": "Bearer " + S.apiKey },
+      body: fd,
+    }).then(function(r) { return r.json(); })
+      .then(function(d) { return d.text || ""; });
+  }
+
+  function analyzeWithHume(blob) {
+    var fd = new FormData();
+    fd.append("json", JSON.stringify({ models: { prosody: {} } }));
+    fd.append("file", blob, "rec.webm");
+    return fetch("https://api.hume.ai/v0/batch/jobs", {
+      method: "POST",
+      headers: { "X-Hume-Api-Key": S.humeKey },
+      body: fd,
+    }).then(function(r) { return r.json(); })
+      .then(function(d) {
+        if (!d.job_id) throw new Error("No job_id from Hume");
+        return pollHumeJob(d.job_id);
+      });
+  }
+
+  function pollHumeJob(jobId) {
+    return new Promise(function(resolve, reject) {
+      var tries = 0;
+      var timer = setInterval(function() {
+        if (++tries > 30) { clearInterval(timer); reject(new Error("Hume timeout")); return; }
+        fetch("https://api.hume.ai/v0/batch/jobs/" + jobId, {
+          headers: { "X-Hume-Api-Key": S.humeKey },
+        }).then(function(r) { return r.json(); })
+          .then(function(d) {
+            var status = d.state && d.state.status;
+            if (status === "COMPLETED") {
+              clearInterval(timer);
+              fetch("https://api.hume.ai/v0/batch/jobs/" + jobId + "/predictions", {
+                headers: { "X-Hume-Api-Key": S.humeKey },
+              }).then(function(r) { return r.json(); })
+                .then(function(preds) { resolve(extractHumeScores(preds)); })
+                .catch(reject);
+            } else if (status === "FAILED") {
+              clearInterval(timer); reject(new Error("Hume job failed"));
+            }
+          }).catch(function() {});
+      }, 2000);
+    });
+  }
+
+  function extractHumeScores(preds) {
+    try {
+      var segs = preds[0].results.predictions[0].models.prosody.grouped_predictions[0].predictions;
+      var totals = {}, n = segs.length;
+      segs.forEach(function(seg) {
+        seg.emotions.forEach(function(e) { totals[e.name] = (totals[e.name] || 0) + e.score; });
+      });
+      var avg = {};
+      Object.keys(totals).forEach(function(k) { avg[k] = totals[k] / n; });
+      var conf = ((avg["Determination"]||0) + (avg["Enthusiasm"]||0) + (avg["Calmness"]||0) + (avg["Interest"]||0)) / 4;
+      var anx  = (avg["Anxiety"]||0) * 0.7 + (avg["Distress"]||0) * 0.3;
+      var enrg = ((avg["Excitement"]||0) + (avg["Enthusiasm"]||0)) / 2;
+      var calm = avg["Calmness"] || 0;
+      var top5 = Object.entries(avg).sort(function(a,b){return b[1]-a[1];}).slice(0,5).map(function(e){return e[0];});
+      return {
+        confidence: Math.min(Math.round(conf * 300), 100),
+        anxiety:    Math.min(Math.round(anx  * 400), 100),
+        energy:     Math.min(Math.round(enrg * 300), 100),
+        calmness:   Math.min(Math.round(calm * 400), 100),
+        top5: top5,
+      };
+    } catch(e) { return null; }
+  }
+
+  function renderPracticeResult(transcript, scores) {
+    var feedbackPrompt = [
+      "あなたは「ふじキュン♡」という電話コーチです。",
+      "ユーザーが電話台本を音読練習しました。必ずポジティブで励ましになるフィードバックを日本語2〜3文で書いてください。",
+      "良い点を必ず1つ以上見つけて褒め、改善点は前向きな提案として伝えてください。絶対に批判しないでください。",
+      "語尾は「キュン」「キュン♡」を自然に使ってください。",
+      "",
+      "【元の台本（抜粋）】",
+      S.script.slice(0, 150),
+      "",
+      "【実際に話した内容（Whisper文字起こし）】",
+      transcript || "（文字起こしなし）",
+      "",
+      "【Hume AIによる声の分析】",
+      scores
+        ? "自信度:" + scores.confidence + "%, 不安度:" + scores.anxiety + "%, エネルギー:" + scores.energy + "%, 落ち着き:" + scores.calmness + "%, 声で感じた感情トップ5:" + scores.top5.join("・")
+        : "（音声分析なし・Whisperのみ）",
+    ].join("\n");
+
+    callGroq(S.apiKey, feedbackPrompt).then(function(feedback) {
+      showPracticeResult(transcript, scores, feedback);
+      mascot(feedback.replace(/\n/g, " ").slice(0, 60) + "♡");
+    }).catch(function() {
+      showPracticeResult(transcript, scores, "よく読めてたキュン♡ この調子で電話してみてね！");
+    });
+  }
+
+  function showPracticeResult(transcript, scores, feedback) {
+    var scoresHTML = "";
+    if (scores) {
+      scoresHTML = '<div class="fC_prac-scores">'
+        + scoreBar("💪 自信度",   scores.confidence)
+        + scoreBar("⚡ エネルギー", scores.energy)
+        + scoreBar("😌 落ち着き",  scores.calmness)
+        + '</div>';
+    }
+    var transcriptHTML = transcript
+      ? '<div class="fC_prac-transcript"><div class="fC_prac-transcript-label">📝 あなたが話した言葉：</div><div class="fC_prac-transcript-text">' + escHtml(transcript) + '</div></div>'
+      : "";
+
+    D.pracResult.innerHTML =
+      '<div class="fC_prac-feedback"><div class="fC_prac-feedback-icon">🌸</div><div class="fC_prac-feedback-text">' + escHtml(feedback) + '</div></div>'
+      + scoresHTML + transcriptHTML
+      + '<div class="fC_prac-btns">'
+      + '<button class="fC_act-btn" id="fC_rerecBtn">🎤 もう一回練習</button>'
+      + '<button class="fC_act-btn fC_act-btn--practice" id="fC_callNowBtn">📞 よし、電話する！</button>'
+      + '</div>';
+
+    D.recBtn.style.display = "none";
+
+    $("fC_rerecBtn").addEventListener("click", function() {
+      D.pracResult.innerHTML = "";
+      D.recBtn.style.display = "";
+      D.recBtn.textContent   = "🎤 録音開始";
+      D.recBtn.disabled      = false;
+      mascot("もう一回練習するキュン♡ 今度はさらに自信を持って読んでみてね！");
+    });
+    $("fC_callNowBtn").addEventListener("click", function() {
+      D.practice.classList.remove("visible");
+      mascot("いってらっしゃいキュン！！🔥 練習バッチリだから絶対大丈夫キュン♡");
+      toast("💪 練習完了！自信を持って電話してキュン♡", "success", 4000);
+    });
+  }
+
+  function scoreBar(label, val) {
+    var color = val >= 70 ? "#10b981" : val >= 40 ? "#f59e0b" : "#63b3ed";
+    return '<div class="fC_score-row"><span class="fC_score-label">' + label + '</span>'
+      + '<div class="fC_score-bar-wrap"><div class="fC_score-bar" style="width:' + val + '%;background:' + color + '"></div></div>'
+      + '<span class="fC_score-val">' + val + '%</span></div>';
+  }
+
+  function escHtml(s) {
+    return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  }
+
+  D.practiceBtn.addEventListener("click", openPractice);
+  D.pracClose.addEventListener("click",   function() { D.practice.classList.remove("visible"); });
+  D.recBtn.addEventListener("click",      toggleRecording);
 
   D.modal.addEventListener("click", function (e) {
     if (e.target === D.modal) closeModal();
