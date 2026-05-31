@@ -963,11 +963,9 @@
       <span aria-hidden="true">⚙️</span> APIキーの設定キュン♡
     </h2>
     <p class="fC_modal-desc">
-      台本を作るにはAIのAPIキーが必要だキュンよ♡<br>
-      キーはあなたのブラウザだけに保存されて、外に出ないから安心してね！<br>
-      <strong>Gemini</strong> は
-      <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer">Google AI Studio</a>
-      で無料取得できるキュン♡
+      <strong>Groq</strong>はAPIキー不要でそのまま使えるキュン♡（サーバーで管理してるよ！）<br>
+      GeminiやOpenAIを使いたい場合のみ、下にAPIキーを入力してね。<br>
+      入力したキーはあなたのブラウザだけに保存されて、外に出ないから安心してね！
     </p>
 
     <!-- Demo mode option -->
@@ -979,7 +977,7 @@
     <div class="fC_form-group">
       <label class="fC_label" for="fC_provider">AIプロバイダー</label>
       <select class="fC_select" id="fC_provider" aria-describedby="fC_providerHint">
-        <option value="groq">🚀 Groq（完全無料・クレカ不要！おすすめキュン♡）</option>
+        <option value="groq">🚀 Groq（APIキー不要・おすすめキュン♡）</option>
         <option value="gemini">✨ Google Gemini</option>
         <option value="openai">💬 OpenAI（ChatGPT系）</option>
       </select>
@@ -1500,10 +1498,30 @@
     });
   }
 
+  function callGroqProxy(prompt) {
+    return fetch("/api/generate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prompt: prompt }),
+    }).then(function (res) {
+      return res.json().then(function (data) {
+        if (!res.ok) {
+          if (data.error === "RATE_LIMIT" || res.status === 429) throw new Error("RATE_LIMIT");
+          if (data.error === "EMPTY_RESPONSE") throw new Error("EMPTY_RESPONSE");
+          throw new Error("API_ERROR:" + res.status);
+        }
+        if (!data.text) throw new Error("EMPTY_RESPONSE");
+        return data.text;
+      });
+    });
+  }
+
   function callAPI(prompt) {
     if (S.provider === "openai") return callOpenAI(S.apiKey, prompt);
-    if (S.provider === "groq")   return callGroq(S.apiKey, prompt);
-    return callGemini(S.apiKey, prompt);
+    if (S.provider === "gemini") return callGemini(S.apiKey, prompt);
+    // Groq: 個人キーがあれば直接呼び出し、なければサーバープロキシ
+    if (S.apiKey) return callGroq(S.apiKey, prompt);
+    return callGroqProxy(prompt);
   }
 
   /* 429 発生時に60秒待って1回だけリトライ（レート制限は1分単位でリセット） */
@@ -1533,9 +1551,10 @@
 
   /* ── Generate ───────────────────────────────── */
   function generate() {
-    if (!S.demoMode && !S.apiKey) {
+    // Groq はプロキシで動作するためキー不要。Gemini/OpenAI はキーが必要
+    if (!S.demoMode && S.provider !== "groq" && !S.apiKey) {
       openModal(true);
-      toast("💡 まずAPIキーを設定してね♡ デモモードも試せるよ！", "warning");
+      toast("💡 GeminiやOpenAIはAPIキーが必要だキュン♡ Groqはキー不要だよ！", "warning");
       return;
     }
     if (!S.purpose.trim()) {
@@ -1850,7 +1869,8 @@
   }
 
   function analyzeRecording(blob) {
-    var p1 = (S.provider === "groq" && S.apiKey)
+    // Groqプロバイダーであれば個人キーの有無によらずWhisper文字起こし可能
+    var p1 = (S.provider === "groq")
       ? transcribeWithWhisper(blob)
       : Promise.resolve("");
     var p2 = S.humeKey
@@ -1868,16 +1888,35 @@
   }
 
   function transcribeWithWhisper(blob) {
-    var fd = new FormData();
-    fd.append("file", blob, "rec.webm");
-    fd.append("model", "whisper-large-v3");
-    fd.append("language", "ja");
-    return fetch("https://api.groq.com/openai/v1/audio/transcriptions", {
-      method: "POST",
-      headers: { "Authorization": "Bearer " + S.apiKey },
-      body: fd,
-    }).then(function(r) { return r.json(); })
-      .then(function(d) { return d.text || ""; });
+    if (S.apiKey) {
+      // 個人キーがある場合は直接呼び出し
+      var fd = new FormData();
+      fd.append("file", blob, "rec.webm");
+      fd.append("model", "whisper-large-v3");
+      fd.append("language", "ja");
+      return fetch("https://api.groq.com/openai/v1/audio/transcriptions", {
+        method: "POST",
+        headers: { "Authorization": "Bearer " + S.apiKey },
+        body: fd,
+      }).then(function(r) { return r.json(); })
+        .then(function(d) { return d.text || ""; });
+    }
+    // キーなし: base64 に変換してサーバープロキシ経由
+    return new Promise(function(resolve, reject) {
+      var reader = new FileReader();
+      reader.onload = function() {
+        var base64 = reader.result.split(",")[1];
+        fetch("/api/transcribe", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ audio: base64, mimeType: blob.type }),
+        }).then(function(r) { return r.json(); })
+          .then(function(d) { resolve(d.text || ""); })
+          .catch(reject);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
   }
 
   function analyzeWithHume(blob) {
@@ -1972,7 +2011,10 @@
         : "（音声分析なし・Whisperのみ）",
     ].join("\n");
 
-    callGroq(S.apiKey, feedbackPrompt).then(function(feedback) {
+    var feedbackCall = S.apiKey
+      ? callGroq(S.apiKey, feedbackPrompt)
+      : callGroqProxy(feedbackPrompt);
+    feedbackCall.then(function(feedback) {
       showPracticeResult(transcript, scores, feedback);
       mascot(feedback.replace(/\n/g, " ").slice(0, 60) + "♡");
     }).catch(function() {
@@ -2211,14 +2253,15 @@
     renderGrowth();
     updateCloudBtn();
     if (S.sbUrl && S.sbKey) initSupabase(S.sbUrl, S.sbKey);
-    if (!S.apiKey) {
+    // Groq（デフォルト）はキー不要でそのまま動作する
+    if (!S.apiKey && S.provider !== "groq") {
       setTimeout(function () { openModal(true); }, 700);
-      mascot("はじめまして！ふじキュン♡だよ♡ APIキーを設定するか、まずはデモモードで試してみてね！Groqは無料で使えるよ♡");
+      mascot("はじめまして！ふじキュン♡だよ♡ GeminiやOpenAIを使う場合はAPIキーを設定してね！");
     } else {
       var st = loadStats();
       var lv = getLevel(st.total);
       mascot(st.total === 0
-        ? "やあ！ふじキュン♡だキュンよ♡ 電話前の緊張、一緒に解消しようね！"
+        ? "やあ！ふじキュン♡だキュンよ♡ 電話前の緊張、一緒に解消しようね！通話相手と目的を教えてくれれば台本を作るキュン♡"
         : lv.avatar + " " + lv.name + "のあなた！今日も一緒に頑張るキュン♡");
     }
   }
