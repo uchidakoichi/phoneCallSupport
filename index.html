@@ -588,6 +588,69 @@
       .fC_script-box { border: 1px solid #ccc; font-size: 14pt; }
     }
 
+  /* ── Demo banner ── */
+  .fC_demo-banner {
+    display: none;
+    background: linear-gradient(135deg, #7c3aed, #a855f7);
+    border-radius: var(--radius);
+    padding: 0.7em 1em;
+    color: #fff;
+    font-size: 0.82rem;
+    line-height: 1.5;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.6em;
+    border: 1px solid rgba(255,255,255,0.2);
+  }
+  .fC_demo-banner.visible { display: flex; }
+  .fC_demo-close {
+    background: rgba(255,255,255,0.2);
+    border: none;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    min-width: 30px;
+    cursor: pointer;
+    color: #fff;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: background var(--trans);
+  }
+  .fC_demo-close:hover { background: rgba(255,255,255,0.35); }
+
+  /* ── Demo modal section ── */
+  .fC_demo-section {
+    background: #f3e8ff;
+    border-radius: 10px;
+    padding: 0.85em;
+    margin-bottom: 1em;
+    border: 1px solid #d8b4fe;
+  }
+  .fC_demo-section p {
+    font-size: 0.8rem;
+    color: #6b21a8;
+    margin-bottom: 0.6em;
+    line-height: 1.5;
+  }
+  .fC_btn-demo {
+    width: 100%;
+    min-height: 44px;
+    background: linear-gradient(135deg, #7c3aed, #a855f7);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-family: inherit;
+    font-size: 0.9rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all var(--trans);
+    -webkit-tap-highlight-color: transparent;
+  }
+  .fC_btn-demo:hover { opacity: 0.9; transform: translateY(-1px); }
+
   /* ── Growth Card ── */
   .fC_growth {
     background: linear-gradient(135deg, #0f0c29, #302b63, #24243e) !important;
@@ -753,6 +816,12 @@
 
 <main role="main" id="fC_main">
 
+  <!-- Demo mode banner -->
+  <div class="fC_demo-banner" id="fC_demoBanner" role="status">
+    <span>🎮 <strong>デモモード</strong>で試し中キュン♡ サンプル台本を表示するよ！本番は⚙️からAPIキーを設定してね。</span>
+    <button class="fC_demo-close" id="fC_demoBannerClose" aria-label="デモモード終了・設定へ">✕</button>
+  </div>
+
   <!-- Mascot -->
   <div class="fC_mascot" role="note" aria-label="ふじキュン♡からのメッセージ">
     <div class="fC_mascot-icon" aria-hidden="true">🌸</div>
@@ -900,6 +969,13 @@
       <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer">Google AI Studio</a>
       で無料取得できるキュン♡
     </p>
+
+    <!-- Demo mode option -->
+    <div class="fC_demo-section">
+      <p>🎮 APIキーがなくても<strong>デモモード</strong>で動作を確認できるキュン♡<br>サンプル台本でアプリの使い方を試してみてね！</p>
+      <button class="fC_btn-demo" id="fC_demoModeBtn">🎮 デモモードで試してみる♡（APIキー不要）</button>
+    </div>
+
     <div class="fC_form-group">
       <label class="fC_label" for="fC_provider">AIプロバイダー</label>
       <select class="fC_select" id="fC_provider" aria-describedby="fC_providerHint">
@@ -1124,6 +1200,41 @@
     return msgs[Math.floor(Math.random() * msgs.length)];
   }
 
+  /* ── Demo templates ────────────────────────── */
+  var DEMO_TEMPLATES = {
+    "external_humble":
+      "お電話にて大変失礼いたします。私、〇〇部〇〇課の〇〇と申します。\n突然のご連絡、誠に恐れ入ります。\n\nただいまお時間をいただいてもよろしいでしょうか？\n\n本日は、【PURPOSE】の件につきまして、ご確認させていただきたく、お電話を差し上げました。ご担当の〇〇様はいらっしゃいますでしょうか？\n\nご対応のほど、どうぞよろしくお願い申し上げます。",
+    "external_standard":
+      "お世話になっております。〇〇の〇〇と申します。\nお電話での失礼をお許しください。\n\n本日は、【PURPOSE】についてご連絡いたしました。ご担当の〇〇様はいらっしゃいますでしょうか？\n\nよろしければ少々お時間いただけますでしょうか。どうぞよろしくお願いいたします。",
+    "external_friendly":
+      "こんにちは、〇〇の〇〇です。いつもお世話になっています。\n\n本日は、【PURPOSE】についてご連絡させていただきました。ご担当の方はいらっしゃいますか？\n\n少しお時間いただいてもよろしいでしょうか？よろしくお願いします！",
+    "internal_humble":
+      "お疲れ様でございます。〇〇部の〇〇でございます。\nご多忙のところ、大変恐れ入ります。\n\n【PURPOSE】の件でご確認させていただきたいことがございまして、ご連絡いたしました。少しお時間いただいてもよろしいでしょうか？",
+    "internal_standard":
+      "お疲れ様です。〇〇部の〇〇です。\n\n【PURPOSE】について確認したいことがありましてご連絡しました。今、少しよろしいでしょうか？",
+    "internal_friendly":
+      "お疲れ様です！〇〇の〇〇ですが、今ちょっといいですか？\n\n【PURPOSE】のことで確認したいことがあって。いつ頃都合いいか教えてもらえると助かります！",
+  };
+
+  function getDemoScript(purpose, callerType, keigoLevel) {
+    var key  = callerType + "_" + keigoLevel;
+    var tmpl = DEMO_TEMPLATES[key] || DEMO_TEMPLATES["external_standard"];
+    return tmpl.replace("【PURPOSE】", purpose || "ご確認事項");
+  }
+
+  function enterDemoMode() {
+    S.demoMode = true;
+    $("fC_demoBanner").classList.add("visible");
+    closeModal();
+    mascot("デモモード開始キュン♡ 目的を入力して「台本を作る」ボタンを押してみてね！APIキーは不要だよ！");
+    toast("🎮 デモモードで試せるよ♡ 本番は⚙️からAPIキーを設定してね", "warning", 5000);
+  }
+
+  function exitDemoMode() {
+    S.demoMode = false;
+    $("fC_demoBanner").classList.remove("visible");
+  }
+
   /* ── State ─────────────────────────────────── */
   const S = {
     apiKey:     "",
@@ -1138,6 +1249,7 @@
     modalOpen:  false,
     sbUrl:      "",
     sbKey:      "",
+    demoMode:   false,
   };
 
   /* ── DOM helpers ────────────────────────────── */
@@ -1421,9 +1533,9 @@
 
   /* ── Generate ───────────────────────────────── */
   function generate() {
-    if (!S.apiKey) {
+    if (!S.demoMode && !S.apiKey) {
       openModal(true);
-      toast("💡 まずAPIキーを設定してね♡", "warning");
+      toast("💡 まずAPIキーを設定してね♡ デモモードも試せるよ！", "warning");
       return;
     }
     if (!S.purpose.trim()) {
@@ -1433,6 +1545,32 @@
     }
     mascot(preGenMsg());
     setLoading(true);
+
+    if (S.demoMode) {
+      setTimeout(function () {
+        var text = getDemoScript(S.purpose.trim(), S.callerType, S.keigoLevel);
+        S.script = text;
+        D.scriptBox.textContent = S.script;
+        D.result.classList.add("visible");
+        addHistory({
+          script:     S.script,
+          purpose:    S.purpose,
+          callerType: S.callerType,
+          keigoLevel: S.keigoLevel,
+          date:       new Date().toLocaleString("ja-JP"),
+        });
+        var result = recordCall(S.callerType, S.keigoLevel);
+        var msg    = postGenMsg(result.leveled);
+        if (msg) mascot(msg);
+        toast("🎮 デモ台本ができたキュン♡（サンプル）", "success");
+        setTimeout(function () {
+          D.result.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        }, 80);
+        setLoading(false);
+      }, 1400);
+      return;
+    }
+
     callWithRetry(buildPrompt())
       .then(function (text) {
         S.script = text.trim();
@@ -1617,6 +1755,7 @@
     if (!key) { toast("🔑 APIキーを入力してね♡", "warning"); return; }
     saveKey(key, D.provider.value, hume, sbUrl, sbKey);
     if (sbUrl && sbKey) initSupabase(sbUrl, sbKey);
+    if (S.demoMode) exitDemoMode();
     closeModal();
     var msg = hume ? "✅ APIキーとHume AIキーを保存したキュン♡ 音読練習もできるよ！" : "✅ APIキーを保存したキュン♡ 台本が作れるよ！";
     if (sbUrl && sbKey) msg += " ☁️ クラウド同期も設定したキュン！";
@@ -1806,6 +1945,15 @@
   }
 
   function renderPracticeResult(transcript, scores) {
+    if (S.demoMode) {
+      showPracticeResult(
+        transcript,
+        null,
+        "デモモードでも上手く読めてたキュン♡ 声もはっきりしていて、きっと相手にしっかり伝わるよ！本番でも自信を持って電話してキュン♡"
+      );
+      mascot("練習お疲れ様キュン♡ いい感じだったよ！本番でも大丈夫キュン！");
+      return;
+    }
     var feedbackPrompt = [
       "あなたは「ふじキュン♡」という電話コーチです。",
       "ユーザーが電話台本を音読練習しました。必ずポジティブで励ましになるフィードバックを日本語2〜3文で書いてください。",
@@ -1883,6 +2031,12 @@
   D.practiceBtn.addEventListener("click", openPractice);
   D.pracClose.addEventListener("click",   function() { D.practice.classList.remove("visible"); });
   D.recBtn.addEventListener("click",      toggleRecording);
+
+  $("fC_demoModeBtn").addEventListener("click", enterDemoMode);
+  $("fC_demoBannerClose").addEventListener("click", function() {
+    exitDemoMode();
+    openModal(true);
+  });
 
   D.modal.addEventListener("click", function (e) {
     if (e.target === D.modal) closeModal();
@@ -2059,7 +2213,7 @@
     if (S.sbUrl && S.sbKey) initSupabase(S.sbUrl, S.sbKey);
     if (!S.apiKey) {
       setTimeout(function () { openModal(true); }, 700);
-      mascot("はじめまして！ふじキュン♡だよ♡ まずAPIキーを設定してね。Groqは無料で使えるキュンよ♡");
+      mascot("はじめまして！ふじキュン♡だよ♡ APIキーを設定するか、まずはデモモードで試してみてね！Groqは無料で使えるよ♡");
     } else {
       var st = loadStats();
       var lv = getLevel(st.total);
