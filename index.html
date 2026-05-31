@@ -1,0 +1,2076 @@
+<!DOCTYPE html>
+<!-- FujiCall v1.0.0 | 電話かけ出しサポート by ふじキュン♡ | 藤沢市マスコット -->
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self';
+                 script-src 'self' 'unsafe-inline' https://vercel.live https://cdn.jsdelivr.net;
+                 style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+                 font-src https://fonts.gstatic.com data:;
+                 connect-src 'self' https://generativelanguage.googleapis.com https://api.openai.com https://api.groq.com https://api.hume.ai https://vercel.live https://*.supabase.co;
+                 img-src 'self' data:;
+                 frame-src https://vercel.live;">
+  <title>電話かけ出しサポート♡ | ふじキュン</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <style>
+    :root {
+      --primary: #0097a7;
+      --primary-light: #e0f7fa;
+      --accent: #f06292;
+      --accent-light: #fce4ec;
+      --bg: #f0f9ff;
+      --surface: #ffffff;
+      --text: #1a2332;
+      --text-muted: #6b7280;
+      --border: #e2e8f0;
+      --success: #10b981;
+      --error: #ef4444;
+      --warning: #f59e0b;
+      --radius: 12px;
+      --shadow: 0 4px 24px rgba(0,151,167,0.12);
+      --trans: 0.2s ease;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; -webkit-text-size-adjust: 100%; }
+    body {
+      font-family: 'Noto Sans JP', 'Hiragino Sans', 'Yu Gothic', sans-serif;
+      background: var(--bg) !important;
+      color: var(--text) !important;
+      min-height: 100dvh !important;
+      line-height: 1.5 !important;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Header ── */
+    .fC_header {
+      background: linear-gradient(135deg, #006064 0%, var(--primary) 50%, #00acc1 100%) !important;
+      color: #fff !important;
+      padding: 0.7em 1em !important;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 2px 16px rgba(0,96,100,0.35);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .fC_header-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 0.4em;
+    }
+    .fC_ver {
+      font-size: 0.62rem;
+      background: rgba(255,255,255,0.22);
+      padding: 2px 7px;
+      border-radius: 10px;
+      margin-left: 0.3em;
+      vertical-align: middle;
+      font-weight: 400;
+    }
+    .fC_icon-btn {
+      background: rgba(255,255,255,0.18) !important;
+      border: none;
+      border-radius: 50%;
+      width: 44px !important;
+      height: 44px !important;
+      min-width: 44px;
+      cursor: pointer;
+      font-size: 1.15rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background var(--trans);
+      -webkit-tap-highlight-color: transparent;
+      color: inherit;
+    }
+    @media (hover: hover) {
+      .fC_icon-btn:hover { background: rgba(255,255,255,0.32) !important; }
+    }
+
+    /* ── Main ── */
+    main {
+      flex: 1;
+      max-width: 680px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 1.2em 0.9em 2.5em;
+      display: flex;
+      flex-direction: column;
+      gap: 0.9em;
+    }
+
+    /* ── Mascot bar ── */
+    .fC_mascot {
+      background: linear-gradient(135deg, #fff0f5, #fce4ec) !important;
+      border: 1.5px solid #f48fb1;
+      border-radius: var(--radius) !important;
+      padding: 0.85em 1em !important;
+      display: flex;
+      align-items: flex-start;
+      gap: 0.7em;
+      height: auto !important;
+    }
+    .fC_mascot-icon { font-size: 2rem; flex-shrink: 0; line-height: 1; }
+    .fC_mascot-text {
+      font-size: 0.875rem;
+      color: #880e4f;
+      line-height: 1.55 !important;
+    }
+
+    /* ── Card ── */
+    .fC_card {
+      background: var(--surface) !important;
+      border-radius: var(--radius) !important;
+      box-shadow: var(--shadow);
+      padding: 1.1em !important;
+      border: 1px solid var(--border);
+      height: auto !important;
+    }
+    .fC_step-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--primary);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-bottom: 0.65em;
+      display: flex;
+      align-items: center;
+      gap: 0.3em;
+    }
+
+    /* ── Toggle (caller type) ── */
+    .fC_toggle-wrap {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.45em;
+      background: var(--primary-light);
+      border-radius: 10px;
+      padding: 4px;
+    }
+    .fC_toggle-btn {
+      min-height: 56px !important;
+      border: none;
+      background: transparent;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 0.88rem;
+      font-weight: 500;
+      cursor: pointer;
+      padding: 0.55em 0.5em;
+      transition: all var(--trans);
+      color: var(--text-muted);
+      -webkit-tap-highlight-color: transparent;
+      line-height: 1.4;
+    }
+    .fC_toggle-btn[aria-pressed="true"] {
+      background: var(--primary);
+      color: #fff;
+      box-shadow: 0 2px 10px rgba(0,151,167,0.35);
+    }
+    @media (hover: hover) {
+      .fC_toggle-btn:not([aria-pressed="true"]):hover {
+        background: rgba(0,151,167,0.12);
+        color: var(--primary);
+      }
+    }
+
+    /* ── Keigo buttons ── */
+    .fC_keigo-wrap {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.45em;
+    }
+    .fC_keigo-btn {
+      min-height: 66px !important;
+      border: 2px solid var(--border);
+      background: transparent;
+      border-radius: 10px;
+      font-family: inherit;
+      cursor: pointer;
+      padding: 0.5em 0.25em;
+      transition: all var(--trans);
+      color: var(--text-muted);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.15em;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .fC_keigo-btn .ki { font-size: 1.35rem; }
+    .fC_keigo-btn .kl { font-size: 0.75rem; font-weight: 700; }
+    .fC_keigo-btn .kd { font-size: 0.63rem; opacity: 0.72; }
+    .fC_keigo-btn[aria-pressed="true"] {
+      border-color: var(--primary);
+      background: var(--primary-light);
+      color: var(--primary);
+    }
+    @media (hover: hover) {
+      .fC_keigo-btn:not([aria-pressed="true"]):hover {
+        border-color: var(--primary);
+        background: var(--primary-light);
+        color: var(--primary);
+      }
+    }
+
+    /* ── Textarea ── */
+    .fC_ta-wrap { position: relative; }
+    .fC_textarea {
+      width: 100%;
+      min-height: 96px;
+      border: 2px solid var(--border);
+      border-radius: 10px;
+      padding: 0.7em 0.75em 1.8em;
+      font-family: inherit;
+      font-size: 0.94rem;
+      line-height: 1.55;
+      resize: vertical;
+      transition: border-color var(--trans);
+      background: #fff;
+      color: var(--text);
+    }
+    .fC_textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(0,151,167,0.1);
+    }
+    .fC_char-count {
+      position: absolute;
+      bottom: 0.4em;
+      right: 0.6em;
+      font-size: 0.68rem;
+      color: var(--text-muted);
+      pointer-events: none;
+    }
+
+    /* ── Templates ── */
+    .fC_templates {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.38em;
+      margin-top: 0.55em;
+    }
+    .fC_chip {
+      background: var(--primary-light);
+      border: 1px solid rgba(0,151,167,0.28);
+      color: var(--primary);
+      border-radius: 20px;
+      padding: 0.28em 0.8em;
+      font-size: 0.77rem;
+      cursor: pointer;
+      min-height: 32px;
+      display: inline-flex;
+      align-items: center;
+      font-family: inherit;
+      transition: all var(--trans);
+      -webkit-tap-highlight-color: transparent;
+    }
+    @media (hover: hover) {
+      .fC_chip:hover { background: var(--primary); color: #fff; }
+    }
+
+    /* ── Generate btn ── */
+    .fC_gen-btn {
+      width: 100%;
+      min-height: 54px !important;
+      background: linear-gradient(135deg, #e91e63 0%, var(--accent) 100%);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius);
+      font-family: inherit;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all var(--trans);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5em;
+      box-shadow: 0 4px 18px rgba(233,30,99,0.38);
+      -webkit-tap-highlight-color: transparent;
+    }
+    .fC_gen-btn:disabled {
+      opacity: 0.62;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+    @media (hover: hover) {
+      .fC_gen-btn:not(:disabled):hover {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 24px rgba(233,30,99,0.48);
+      }
+    }
+
+    /* ── Spinner ── */
+    .fC_spinner {
+      width: 20px;
+      height: 20px;
+      border: 2.5px solid rgba(255,255,255,0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: fC_spin 0.65s linear infinite;
+      flex-shrink: 0;
+    }
+    @keyframes fC_spin { to { transform: rotate(360deg); } }
+
+    /* ── Result ── */
+    .fC_result { display: none; }
+    .fC_result.visible { display: block; }
+    .fC_script-box {
+      background: #f8fbff;
+      border: 2px solid var(--primary-light);
+      border-left: 4px solid var(--primary);
+      border-radius: 0 10px 10px 0;
+      padding: 1em;
+      font-size: 0.92rem;
+      line-height: 1.75;
+      white-space: pre-wrap;
+      word-break: break-word;
+      color: var(--text);
+      min-height: 80px;
+    }
+    .fC_result-actions {
+      display: flex;
+      gap: 0.45em;
+      margin-top: 0.75em;
+    }
+    .fC_act-btn {
+      flex: 1;
+      min-height: 46px !important;
+      border-radius: 10px;
+      font-family: inherit;
+      font-size: 0.84rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all var(--trans);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.35em;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .fC_act-btn--copy {
+      background: var(--success);
+      color: #fff;
+      border: none;
+      box-shadow: 0 2px 8px rgba(16,185,129,0.28);
+      flex: 1.5;
+    }
+    .fC_act-btn--print {
+      background: transparent;
+      color: var(--text-muted);
+      border: 2px solid var(--border);
+    }
+    .fC_act-btn--regen {
+      background: transparent;
+      color: var(--primary);
+      border: 2px solid var(--primary);
+      flex: 1.5;
+    }
+    @media (hover: hover) {
+      .fC_act-btn--copy:hover  { background: #059669; }
+      .fC_act-btn--print:hover { background: #f1f5f9; border-color: #94a3b8; }
+      .fC_act-btn--regen:hover { background: var(--primary-light); }
+    }
+
+    /* ── History ── */
+    .fC_history { display: none; }
+    .fC_history.visible { display: block; }
+    .fC_hist-item {
+      background: #f8fbff;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.6em 0.8em;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      cursor: pointer;
+      margin-bottom: 0.4em;
+      line-height: 1.45;
+      -webkit-tap-highlight-color: transparent;
+      transition: all var(--trans);
+    }
+    .fC_hist-item:last-child { margin-bottom: 0; }
+    @media (hover: hover) {
+      .fC_hist-item:hover {
+        border-color: var(--primary);
+        background: var(--primary-light);
+        color: var(--primary);
+      }
+    }
+
+    /* ── Modal ── */
+    .fC_overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.52);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+      padding: 1em;
+    }
+    .fC_overlay.open { display: flex; }
+    .fC_modal {
+      background: #fff;
+      border-radius: 16px;
+      padding: 1.5em;
+      width: 100%;
+      max-width: 460px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.22);
+      animation: fC_up 0.22s ease;
+    }
+    @keyframes fC_up {
+      from { transform: translateY(18px); opacity: 0; }
+      to   { transform: translateY(0);    opacity: 1; }
+    }
+    .fC_modal-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 0.3em;
+      display: flex;
+      align-items: center;
+      gap: 0.4em;
+    }
+    .fC_modal-desc {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      margin-bottom: 1.1em;
+      line-height: 1.6;
+    }
+    .fC_modal-desc a { color: var(--primary); }
+    .fC_form-group { margin-bottom: 0.85em; }
+    .fC_label {
+      display: block;
+      font-size: 0.81rem;
+      font-weight: 600;
+      margin-bottom: 0.3em;
+    }
+    .fC_input, .fC_select {
+      width: 100%;
+      min-height: 44px;
+      border: 2px solid var(--border);
+      border-radius: 10px;
+      padding: 0 0.75em;
+      font-family: inherit;
+      font-size: 0.9rem;
+      color: var(--text);
+      background: #fff;
+      transition: border-color var(--trans);
+    }
+    .fC_input:focus, .fC_select:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(0,151,167,0.1);
+    }
+    .fC_select { cursor: pointer; }
+    .fC_provider-hint {
+      font-size: 0.74rem;
+      color: var(--text-muted);
+      margin-top: 0.3em;
+      line-height: 1.4;
+    }
+    .fC_modal-actions {
+      display: flex;
+      gap: 0.45em;
+      margin-top: 1.2em;
+      flex-wrap: wrap;
+    }
+    .fC_btn-primary {
+      flex: 2;
+      min-height: 46px !important;
+      background: linear-gradient(135deg, var(--primary), #00acc1);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-family: inherit;
+      font-size: 0.94rem;
+      font-weight: 700;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      min-width: 120px;
+    }
+    .fC_btn-secondary {
+      flex: 1;
+      min-height: 46px !important;
+      background: transparent;
+      color: var(--text-muted);
+      border: 2px solid var(--border);
+      border-radius: 10px;
+      font-family: inherit;
+      font-size: 0.88rem;
+      font-weight: 600;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      min-width: 80px;
+    }
+    .fC_btn-danger {
+      min-height: 44px !important;
+      background: transparent;
+      color: var(--error);
+      border: 2px solid rgba(239,68,68,0.3);
+      border-radius: 10px;
+      font-family: inherit;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      padding: 0 0.7em;
+      -webkit-tap-highlight-color: transparent;
+      white-space: nowrap;
+    }
+
+    /* ── Toast ── */
+    .fC_toasts {
+      position: fixed;
+      bottom: 1.4em;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 300;
+      display: flex;
+      flex-direction: column-reverse;
+      align-items: center;
+      gap: 0.45em;
+      pointer-events: none;
+    }
+    .fC_toast {
+      background: #1a2332;
+      color: #fff;
+      padding: 0.7em 1.2em;
+      border-radius: 50px;
+      font-size: 0.84rem;
+      font-weight: 500;
+      max-width: min(92vw, 400px);
+      text-align: center;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+      animation: fC_tin 0.28s ease;
+      line-height: 1.4;
+    }
+    .fC_toast.success { background: var(--success); }
+    .fC_toast.error   { background: var(--error); }
+    .fC_toast.warning { background: var(--warning); color: #1a2332; }
+    @keyframes fC_tin {
+      from { transform: translateY(8px); opacity: 0; }
+      to   { transform: translateY(0);   opacity: 1; }
+    }
+
+    /* ── Footer ── */
+    .fC_footer {
+      text-align: center;
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      padding: 0.9em 1em 1.2em;
+    }
+
+    /* ── Cloud sync button ── */
+    .fC_cloud-active {
+      background: rgba(16,185,129,0.35) !important;
+      box-shadow: 0 0 0 2px rgba(16,185,129,0.5);
+    }
+
+    /* ── Focus ── */
+    :focus-visible {
+      outline: 3px solid var(--primary);
+      outline-offset: 2px;
+    }
+
+    /* ── Print ── */
+    @media print {
+      .fC_header, .fC_mascot, .fC_gen-btn, .fC_result-actions,
+      .fC_toasts, .fC_footer, .fC_history,
+      .fC_card:not(.fC_result .fC_card) { display: none !important; }
+      .fC_script-box { border: 1px solid #ccc; font-size: 14pt; }
+    }
+
+  /* ── Growth Card ── */
+  .fC_growth {
+    background: linear-gradient(135deg, #0f0c29, #302b63, #24243e) !important;
+    border-radius: var(--radius) !important;
+    padding: 1em 1.1em !important;
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.1);
+    box-shadow: 0 4px 24px rgba(48,43,99,0.4);
+  }
+  .fC_growth-top {
+    display: flex; align-items: center;
+    justify-content: space-between; margin-bottom: 0.65em;
+  }
+  .fC_growth-left { display: flex; align-items: center; gap: 0.65em; }
+  .fC_growth-avatar {
+    font-size: 2.4rem; line-height: 1;
+    filter: drop-shadow(0 0 8px rgba(255,215,0,0.5));
+    transition: all 0.5s ease;
+  }
+  .fC_growth-name { font-size: 0.98rem; font-weight: 700; color: #fff; }
+  .fC_growth-sub  { font-size: 0.7rem; color: rgba(255,255,255,0.55); margin-top: 0.1em; }
+  .fC_lv-badge {
+    font-size: 1.2rem; font-weight: 800; color: #ffd700;
+    text-shadow: 0 0 12px rgba(255,215,0,0.6);
+  }
+  .fC_prog-wrap {
+    background: rgba(255,255,255,0.12);
+    border-radius: 10px; height: 7px; overflow: hidden; margin-bottom: 0.3em;
+  }
+  .fC_prog-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #00e5ff, #7c4dff, #ff4081);
+    border-radius: 10px;
+    transition: width 0.7s cubic-bezier(.34,1.56,.64,1);
+  }
+  .fC_prog-label { font-size: 0.65rem; color: rgba(255,255,255,0.45); margin-bottom: 0.8em; }
+  .fC_badges-row { display: flex; flex-wrap: wrap; gap: 0.3em; }
+  .fC_badge {
+    display: flex; flex-direction: column; align-items: center; gap: 0.08em;
+    padding: 0.3em 0.45em; border-radius: 8px;
+    background: rgba(255,255,255,0.06);
+    filter: grayscale(1) opacity(0.3);
+    transition: all 0.35s ease; min-width: 46px; cursor: default;
+  }
+  .fC_badge.earned {
+    filter: none; background: rgba(255,255,255,0.14);
+    box-shadow: 0 2px 10px rgba(124,77,255,0.35);
+    animation: badgePop 0.4s ease;
+  }
+  .fC_badge-icon { font-size: 1.25rem; line-height: 1; }
+  .fC_badge-name { font-size: 0.52rem; color: rgba(255,255,255,0.6); text-align: center; line-height: 1.25; }
+  .fC_badge.earned .fC_badge-name { color: #fff; }
+  @keyframes badgePop {
+    0%   { transform: scale(0.5); opacity: 0; }
+    70%  { transform: scale(1.2); }
+    100% { transform: scale(1);   opacity: 1; }
+  }
+  @keyframes lvUp {
+    0%,100% { transform: scale(1); }
+    50%     { transform: scale(1.4) rotate(-5deg); filter: drop-shadow(0 0 18px gold); }
+  }
+  .fC_growth-avatar.leveling { animation: lvUp 0.65s ease; }
+
+  /* ── Practice Panel ── */
+  .fC_practice {
+    display: none;
+    background: linear-gradient(135deg, #0d1b2a, #1b2838, #0d1b2a) !important;
+    border-radius: var(--radius) !important;
+    padding: 1.1em !important;
+    color: #fff;
+    border: 1px solid rgba(99,179,237,0.25);
+    box-shadow: 0 4px 32px rgba(13,27,42,0.5);
+  }
+  .fC_practice.visible { display: block; }
+  .fC_prac-header {
+    display: flex; align-items: center; justify-content: space-between;
+    font-size: 0.9rem; font-weight: 700; color: #63b3ed;
+    margin-bottom: 0.6em;
+  }
+  .fC_prac-close {
+    background: none; border: none; color: rgba(255,255,255,0.4);
+    font-size: 1.1rem; cursor: pointer; padding: 0 0.2em;
+  }
+  .fC_prac-close:hover { color: #fff; }
+  .fC_prac-hint {
+    font-size: 0.75rem; color: rgba(255,255,255,0.5); margin-bottom: 0.75em;
+  }
+  .fC_prac-script {
+    background: rgba(255,255,255,0.07);
+    border-radius: 8px; padding: 0.75em;
+    font-size: 0.88rem; line-height: 1.7;
+    color: rgba(255,255,255,0.88);
+    margin-bottom: 0.9em;
+    max-height: 140px; overflow-y: auto;
+    white-space: pre-wrap;
+  }
+  .fC_prac-controls { display: flex; align-items: center; gap: 0.7em; margin-bottom: 0.75em; }
+  .fC_rec-btn {
+    background: linear-gradient(135deg, #3182ce, #2b6cb0);
+    color: #fff; border: none; border-radius: 10px;
+    padding: 0.65em 1.3em; font-family: inherit; font-size: 0.9rem;
+    font-weight: 700; cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 12px rgba(49,130,206,0.4);
+  }
+  .fC_rec-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(49,130,206,0.5); }
+  .fC_rec-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+  .fC_rec-btn.recording {
+    background: linear-gradient(135deg, #e53e3e, #c53030);
+    box-shadow: 0 2px 12px rgba(229,62,62,0.5);
+    animation: recPulse 1.5s infinite;
+  }
+  @keyframes recPulse {
+    0%,100% { box-shadow: 0 2px 12px rgba(229,62,62,0.5); }
+    50%      { box-shadow: 0 2px 24px rgba(229,62,62,0.8); }
+  }
+  .fC_rec-status { font-size: 0.78rem; color: #fc8181; display: flex; align-items: center; gap: 0.4em; }
+  .fC_rec-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: #e53e3e; display: inline-block;
+    animation: recPulse 1s infinite;
+  }
+  .fC_prac-feedback {
+    display: flex; gap: 0.7em; align-items: flex-start;
+    background: linear-gradient(135deg, #fff0f5, #fce4ec);
+    border-radius: 10px; padding: 0.8em;
+    margin-bottom: 0.75em;
+  }
+  .fC_prac-feedback-icon { font-size: 1.6rem; flex-shrink: 0; }
+  .fC_prac-feedback-text { font-size: 0.83rem; color: #880e4f; line-height: 1.6; }
+  .fC_prac-scores { margin-bottom: 0.75em; display: flex; flex-direction: column; gap: 0.4em; }
+  .fC_score-row { display: flex; align-items: center; gap: 0.5em; }
+  .fC_score-label { font-size: 0.72rem; color: rgba(255,255,255,0.7); min-width: 72px; }
+  .fC_score-bar-wrap {
+    flex: 1; background: rgba(255,255,255,0.12);
+    border-radius: 6px; height: 6px; overflow: hidden;
+  }
+  .fC_score-bar { height: 100%; border-radius: 6px; transition: width 0.8s cubic-bezier(.34,1.56,.64,1); }
+  .fC_score-val { font-size: 0.7rem; color: #fff; min-width: 30px; text-align: right; }
+  .fC_prac-transcript {
+    background: rgba(255,255,255,0.06); border-radius: 8px;
+    padding: 0.6em 0.75em; margin-bottom: 0.75em;
+  }
+  .fC_prac-transcript-label { font-size: 0.65rem; color: rgba(255,255,255,0.45); margin-bottom: 0.3em; }
+  .fC_prac-transcript-text  { font-size: 0.82rem; color: rgba(255,255,255,0.8); line-height: 1.55; }
+  .fC_prac-btns { display: flex; gap: 0.5em; flex-wrap: wrap; }
+  .fC_act-btn--practice {
+    background: linear-gradient(135deg, #553c9a, #6b46c1) !important;
+    color: #fff !important; border-color: transparent !important;
+  }
+  </style>
+</head>
+<body>
+
+<header class="fC_header" role="banner">
+  <div class="fC_header-title">
+    <span aria-hidden="true">📞</span>
+    電話かけ出しサポート<span class="fC_ver">v1.0.0</span>
+  </div>
+  <button id="fC_cloudBtn"   class="fC_icon-btn" aria-label="クラウド同期" title="クラウド同期（未設定）" style="font-size:1rem;">☁️</button>
+  <button id="fC_settingsBtn" class="fC_icon-btn" aria-label="APIキー設定を開く" title="設定">⚙️</button>
+</header>
+
+<main role="main" id="fC_main">
+
+  <!-- Mascot -->
+  <div class="fC_mascot" role="note" aria-label="ふじキュン♡からのメッセージ">
+    <div class="fC_mascot-icon" aria-hidden="true">🌸</div>
+    <div class="fC_mascot-text" id="fC_mascotMsg" aria-live="polite">
+      やあ！ふじキュン♡だキュンよ♡ 電話前の緊張、一緒に解消しようね！通話相手と目的を教えてくれれば台本を作るキュンね♡
+    </div>
+  </div>
+
+  <!-- Growth Card -->
+  <div class="fC_growth" id="fC_growth" aria-label="成長ステータス">
+    <div class="fC_growth-top">
+      <div class="fC_growth-left">
+        <div class="fC_growth-avatar" id="fC_avatar">🥚</div>
+        <div>
+          <div class="fC_growth-name" id="fC_lvName">でんわのたまご</div>
+          <div class="fC_growth-sub"  id="fC_lvSub">台本0回達成</div>
+        </div>
+      </div>
+      <div class="fC_lv-badge" id="fC_lvBadge">Lv.1</div>
+    </div>
+    <div class="fC_prog-wrap">
+      <div class="fC_prog-bar" id="fC_progBar" style="width:0%"></div>
+    </div>
+    <div class="fC_prog-label" id="fC_progLabel">次のレベルまであと5回</div>
+    <div class="fC_badges-row" id="fC_badgesRow"></div>
+  </div>
+
+  <!-- STEP 1: Caller type -->
+  <div class="fC_card">
+    <div class="fC_step-label"><span aria-hidden="true">👤</span> STEP 1 — 通話相手を選んでね♡</div>
+    <div class="fC_toggle-wrap" role="group" aria-label="通話相手の種別">
+      <button class="fC_toggle-btn" data-action="callerType" data-value="internal"
+              aria-pressed="false" id="fC_callerInternal">
+        🏢 庁内・社内<br><small style="opacity:.75;">内線・同僚・上司</small>
+      </button>
+      <button class="fC_toggle-btn" data-action="callerType" data-value="external"
+              aria-pressed="true" id="fC_callerExternal">
+        🌐 庁外・社外<br><small style="opacity:.75;">取引先・市民・業者</small>
+      </button>
+    </div>
+  </div>
+
+  <!-- STEP 2: Purpose -->
+  <div class="fC_card">
+    <div class="fC_step-label"><span aria-hidden="true">📝</span> STEP 2 — 電話の目的を教えてね♡</div>
+    <div class="fC_ta-wrap">
+      <textarea class="fC_textarea" id="fC_purpose"
+        placeholder="例：来週の打ち合わせ日程を確認したい&#10;例：請求書の送付先変更をお願いしたい&#10;例：担当者に取り次いでもらいたい"
+        maxlength="300" rows="4" aria-label="電話の目的・内容"></textarea>
+      <span class="fC_char-count" id="fC_charCount" aria-live="polite">0/300</span>
+    </div>
+    <div class="fC_templates" role="group" aria-label="よく使うテンプレート">
+      <button class="fC_chip" data-action="template" data-text="来週の打ち合わせ日程を確認したい">📅 日程確認</button>
+      <button class="fC_chip" data-action="template" data-text="担当者に取り次いでもらいたい">🔀 取り次ぎ</button>
+      <button class="fC_chip" data-action="template" data-text="書類・資料の送付について確認したい">📄 書類確認</button>
+      <button class="fC_chip" data-action="template" data-text="お問い合わせへの折り返し連絡">📲 折り返し</button>
+      <button class="fC_chip" data-action="template" data-text="欠席・欠勤の連絡をしたい">😔 欠席連絡</button>
+    </div>
+  </div>
+
+  <!-- STEP 3: Keigo -->
+  <div class="fC_card">
+    <div class="fC_step-label"><span aria-hidden="true">🎩</span> STEP 3 — 敬語レベルを選んでね♡</div>
+    <div class="fC_keigo-wrap" role="group" aria-label="敬語レベルの選択">
+      <button class="fC_keigo-btn" data-action="keigo" data-value="humble"
+              aria-pressed="false" id="fC_keigoHumble">
+        <span class="ki">🙇</span>
+        <span class="kl">へりくだり</span>
+        <span class="kd">謙譲語強め</span>
+      </button>
+      <button class="fC_keigo-btn" data-action="keigo" data-value="standard"
+              aria-pressed="true" id="fC_keigoStandard">
+        <span class="ki">👔</span>
+        <span class="kl">標準</span>
+        <span class="kd">丁寧語</span>
+      </button>
+      <button class="fC_keigo-btn" data-action="keigo" data-value="friendly"
+              aria-pressed="false" id="fC_keigoFriendly">
+        <span class="ki">😊</span>
+        <span class="kl">フレンドリー</span>
+        <span class="kd">社内・親しい人</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Generate -->
+  <button class="fC_gen-btn" id="fC_genBtn" aria-label="AIで電話台本を生成する">
+    <span id="fC_genIcon" aria-hidden="true">✨</span>
+    <span id="fC_genLabel">台本を作ってキュン♡</span>
+  </button>
+
+  <!-- Result -->
+  <div class="fC_result" id="fC_result" aria-live="polite">
+    <div class="fC_card">
+      <div class="fC_step-label"><span aria-hidden="true">📜</span> ふじキュン♡の台本ができたよ！</div>
+      <div class="fC_script-box" id="fC_scriptBox" role="region" aria-label="生成された電話台本"></div>
+      <div class="fC_result-actions">
+        <button class="fC_act-btn fC_act-btn--regen"     id="fC_regenBtn"    aria-label="台本を作り直す">🔄 作り直す</button>
+        <button class="fC_act-btn fC_act-btn--practice"  id="fC_practiceBtn" aria-label="音読練習モードを開く">🎤 音読練習</button>
+        <button class="fC_act-btn fC_act-btn--copy"      id="fC_copyBtn"     aria-label="台本をコピー">📋 コピー</button>
+        <button class="fC_act-btn fC_act-btn--print"     id="fC_printBtn"    aria-label="台本を印刷する" title="印刷">🖨️</button>
+      </div>
+    </div>
+
+    <!-- Practice panel -->
+    <div class="fC_practice" id="fC_practice">
+      <div class="fC_prac-header">
+        <span>🎤 音読練習モード</span>
+        <button class="fC_prac-close" id="fC_pracClose" aria-label="練習パネルを閉じる">✕</button>
+      </div>
+      <div class="fC_prac-hint">台本を見ながら声に出して読んでキュン♡ 録音→停止で声を分析するよ！</div>
+      <div class="fC_prac-script" id="fC_pracScript"></div>
+      <div class="fC_prac-controls">
+        <button class="fC_rec-btn" id="fC_recBtn">🎤 録音開始</button>
+        <div class="fC_rec-status" id="fC_recStatus"></div>
+      </div>
+      <div id="fC_pracResult"></div>
+    </div>
+  </div>
+
+  <!-- History -->
+  <div class="fC_history" id="fC_history">
+    <div class="fC_card">
+      <div class="fC_step-label"><span aria-hidden="true">🕐</span> 最近の台本（最大3件）</div>
+      <div id="fC_histList"></div>
+    </div>
+  </div>
+
+</main>
+
+<footer class="fC_footer" role="contentinfo">
+  ふじキュン♡ と一緒に、電話の不安をなくそうキュンね♡ &nbsp;|&nbsp; v1.0.0
+</footer>
+
+<!-- Settings modal -->
+<div class="fC_overlay" id="fC_modal" role="dialog" aria-modal="true" aria-labelledby="fC_modalTitle">
+  <div class="fC_modal">
+    <h2 class="fC_modal-title" id="fC_modalTitle">
+      <span aria-hidden="true">⚙️</span> APIキーの設定キュン♡
+    </h2>
+    <p class="fC_modal-desc">
+      台本を作るにはAIのAPIキーが必要だキュンよ♡<br>
+      キーはあなたのブラウザだけに保存されて、外に出ないから安心してね！<br>
+      <strong>Gemini</strong> は
+      <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer">Google AI Studio</a>
+      で無料取得できるキュン♡
+    </p>
+    <div class="fC_form-group">
+      <label class="fC_label" for="fC_provider">AIプロバイダー</label>
+      <select class="fC_select" id="fC_provider" aria-describedby="fC_providerHint">
+        <option value="groq">🚀 Groq（完全無料・クレカ不要！おすすめキュン♡）</option>
+        <option value="gemini">✨ Google Gemini</option>
+        <option value="openai">💬 OpenAI（ChatGPT系）</option>
+      </select>
+      <p class="fC_provider-hint" id="fC_providerHint"></p>
+    </div>
+    <div class="fC_form-group">
+      <label class="fC_label" for="fC_apiKey">
+        APIキー <span style="color:var(--error)" aria-hidden="true">*</span>
+      </label>
+      <input type="password" class="fC_input" id="fC_apiKey"
+             placeholder="gsk_...（Groq）/ AIzaSy...（Gemini）/ sk-...（OpenAI）"
+             autocomplete="off" spellcheck="false">
+    </div>
+    <div class="fC_form-group">
+      <label class="fC_label" for="fC_humeKey">
+        🎤 Hume AI APIキー <span style="color:var(--text-muted);font-weight:400;">（音読練習用・任意）</span>
+      </label>
+      <input type="password" class="fC_input" id="fC_humeKey"
+             placeholder="Hume AIのAPIキーを入力（任意）"
+             autocomplete="off" spellcheck="false">
+      <p class="fC_provider-hint">🎙 入力すると音読練習で声の感情・抑揚を分析できるキュン♡ <a href="https://platform.hume.ai" target="_blank" rel="noopener noreferrer">platform.hume.ai</a> で無料取得</p>
+    </div>
+    <div class="fC_form-group">
+      <label class="fC_label">☁️ クラウド同期 <span style="color:var(--text-muted);font-weight:400;">（任意・どの端末からも履歴を引き継ぎ）</span></label>
+      <input type="url" class="fC_input" id="fC_sbUrl"
+             placeholder="https://xxxx.supabase.co"
+             autocomplete="off" spellcheck="false" style="margin-bottom:0.4em;">
+      <input type="password" class="fC_input" id="fC_sbKey"
+             placeholder="Supabase anon key（公開鍵・安全キュン♡）"
+             autocomplete="off" spellcheck="false">
+      <p class="fC_provider-hint">☁️ <a href="https://supabase.com" target="_blank" rel="noopener">supabase.com</a> で無料プロジェクトを作成してURLとanon keyを入力してキュン♡</p>
+    </div>
+    <div id="fC_sbLoginWrap" style="display:none;margin-bottom:0.85em;">
+      <div id="fC_sbAuthBox"></div>
+    </div>
+    <div class="fC_modal-actions">
+      <button class="fC_btn-secondary" id="fC_cancelBtn">キャンセル</button>
+      <button class="fC_btn-danger"    id="fC_clearBtn">🗑️ 削除</button>
+      <button class="fC_btn-primary"   id="fC_saveBtn">✅ 保存してね♡</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast container -->
+<div class="fC_toasts" id="fC_toasts" aria-live="assertive" aria-atomic="false" role="status"></div>
+
+<script>
+(function () {
+  "use strict";
+
+  const VERSION   = "v1.0.0";
+  const LS_KEY    = "fujiCall_apiKey";
+  const LS_PROV   = "fujiCall_provider";
+  const LS_HIST   = "fujiCall_history";
+  const LS_STATS  = "fujiCall_stats";
+  const LS_HUME   = "fujiCall_humeKey";
+  const LS_SB_URL = "fujiCall_sbUrl";
+  const LS_SB_KEY = "fujiCall_sbKey";
+
+  var _sb     = null;
+  var _sbUser = null;
+
+  /* ── Level definitions ──────────────────────── */
+  var LEVELS = [
+    { lv:1, min:0,  name:"でんわのたまご",   avatar:"🥚" },
+    { lv:2, min:5,  name:"でんわびと",        avatar:"🐣" },
+    { lv:3, min:15, name:"でんわファイター",  avatar:"⚡" },
+    { lv:4, min:30, name:"でんわ戦士",        avatar:"🔥" },
+    { lv:5, min:60, name:"でんわマスター",    avatar:"👑" },
+  ];
+
+  /* ── Badge definitions ──────────────────────── */
+  var BADGES = [
+    { id:"first",    icon:"🌟", name:"はじめの一歩",
+      cond: function(s){ return s.total >= 1; } },
+    { id:"five",     icon:"🎯", name:"5回チャレンジ",
+      cond: function(s){ return s.total >= 5; } },
+    { id:"external", icon:"💼", name:"社外の壁突破",
+      cond: function(s){ return (s.callerStats.external||0) >= 3; } },
+    { id:"humble",   icon:"🎩", name:"謙譲語の達人",
+      cond: function(s){ return (s.keigoStats.humble||0) >= 3; } },
+    { id:"ten",      icon:"🎖", name:"10回突破",
+      cond: function(s){ return s.total >= 10; } },
+    { id:"allkeigo", icon:"✨", name:"全スタイル制覇",
+      cond: function(s){ return (s.keigoStats.humble||0)>=1 && (s.keigoStats.standard||0)>=1 && (s.keigoStats.friendly||0)>=1; } },
+    { id:"thirty",   icon:"🏅", name:"30回達成",
+      cond: function(s){ return s.total >= 30; } },
+    { id:"master",   icon:"👑", name:"でんわマスター",
+      cond: function(s){ return s.total >= 60; } },
+  ];
+
+  /* ── Stats storage ──────────────────────────── */
+  function loadStats() {
+    try {
+      return JSON.parse(localStorage.getItem(LS_STATS) || "null") || {
+        total: 0, badges: [],
+        keigoStats: {humble:0, standard:0, friendly:0},
+        callerStats: {internal:0, external:0},
+      };
+    } catch(_) {
+      return { total:0, badges:[], keigoStats:{humble:0,standard:0,friendly:0}, callerStats:{internal:0,external:0} };
+    }
+  }
+  function saveStatsData(st) {
+    localStorage.setItem(LS_STATS, JSON.stringify(st));
+    pushStats(st);
+  }
+  function saveStatsDataLocal(st) { localStorage.setItem(LS_STATS, JSON.stringify(st)); }
+
+  function getLevel(n) {
+    var lv = LEVELS[0];
+    for (var i = LEVELS.length - 1; i >= 0; i--) {
+      if (n >= LEVELS[i].min) { lv = LEVELS[i]; break; }
+    }
+    return lv;
+  }
+
+  /* ── Render growth card ─────────────────────── */
+  function renderGrowth() {
+    var st  = loadStats();
+    var lv  = getLevel(st.total);
+    var nxt = null;
+    for (var i = 0; i < LEVELS.length; i++) { if (LEVELS[i].lv === lv.lv + 1) { nxt = LEVELS[i]; break; } }
+
+    $("fC_avatar").textContent  = lv.avatar;
+    $("fC_lvName").textContent  = lv.name;
+    $("fC_lvSub").textContent   = "台本" + st.total + "回達成";
+    $("fC_lvBadge").textContent = "Lv." + lv.lv;
+
+    if (nxt) {
+      var pct = Math.min(((st.total - lv.min) / (nxt.min - lv.min)) * 100, 100);
+      $("fC_progBar").style.width   = pct + "%";
+      $("fC_progLabel").textContent = "次のレベルまであと" + (nxt.min - st.total) + "回｜" + nxt.avatar + " " + nxt.name;
+    } else {
+      $("fC_progBar").style.width   = "100%";
+      $("fC_progLabel").textContent = "👑 最高レベル達成！伝説の電話マスターキュン！";
+    }
+
+    var row = $("fC_badgesRow");
+    row.innerHTML = "";
+    BADGES.forEach(function(b) {
+      var earned = st.badges.indexOf(b.id) >= 0;
+      var el = document.createElement("div");
+      el.className = "fC_badge" + (earned ? " earned" : "");
+      el.title = b.name;
+      el.innerHTML = '<span class="fC_badge-icon">' + b.icon + '</span>'
+                   + '<span class="fC_badge-name">' + b.name + '</span>';
+      row.appendChild(el);
+    });
+  }
+
+  /* ── Record call & award ────────────────────── */
+  function recordCall(callerType, keigoLevel) {
+    var st     = loadStats();
+    var prevLv = getLevel(st.total);
+
+    st.total++;
+    st.callerStats[callerType] = (st.callerStats[callerType] || 0) + 1;
+    st.keigoStats[keigoLevel]  = (st.keigoStats[keigoLevel]  || 0) + 1;
+
+    var newLv    = getLevel(st.total);
+    var newBadges = [];
+    BADGES.forEach(function(b) {
+      if (st.badges.indexOf(b.id) < 0 && b.cond(st)) {
+        st.badges.push(b.id);
+        newBadges.push(b);
+      }
+    });
+
+    saveStatsData(st);
+    renderGrowth();
+
+    if (newLv.lv > prevLv.lv) {
+      var avatarEl = $("fC_avatar");
+      avatarEl.classList.add("leveling");
+      setTimeout(function(){ avatarEl.classList.remove("leveling"); }, 700);
+      setTimeout(function(){
+        toast("🎉 レベルアップ！ " + newLv.avatar + " " + newLv.name + " になったキュン！！", "success", 5000);
+        mascot("すごいキュン！！" + newLv.avatar + "「" + newLv.name + "」にレベルアップしたよ♡ どんどん電話の達人に近づいてるキュン！！");
+      }, 400);
+    }
+    newBadges.forEach(function(b, i) {
+      setTimeout(function(){
+        toast("🏆 バッジ獲得！「" + b.name + "」" + b.icon, "success", 4000);
+      }, (newLv.lv > prevLv.lv ? 1800 : 600) + i * 700);
+    });
+
+    return { newLv: newLv, prevLv: prevLv, leveled: newLv.lv > prevLv.lv };
+  }
+
+  /* ── Encouragement messages ─────────────────── */
+  function preGenMsg() {
+    var n    = loadStats().total;
+    var lv   = getLevel(n).lv;
+    var pool = [
+      ["緊張しなくて大丈夫キュン！台本があれば絶対できるキュン♡", "一緒に準備しようキュン♡ ふじキュンが応援してるよ！"],
+      ["もう" + n + "回も経験してるキュン！今日もできるキュン♡", "少しずつ上手くなってるキュン♡ 今回も絶対大丈夫だよ！"],
+      ["⚡ファイター、準備はいいキュン？台本、作るね！", "電話ファイターの実力、見せてキュン！⚡"],
+      ["もう怖くないキュン！🔥" + n + "回の実績があるキュン！", "戦士の電話、行くキュン！🔥どんな相手でも大丈夫だキュン！"],
+      ["👑伝説のマスター、今日も完璧に行くキュン！", "電話マスターの貫禄、見せてキュン！👑"],
+    ];
+    var msgs = pool[Math.min(lv - 1, pool.length - 1)];
+    return msgs[Math.floor(Math.random() * msgs.length)];
+  }
+
+  function postGenMsg(leveled) {
+    if (leveled) return "";
+    var n  = loadStats().total;
+    var lv = getLevel(n).lv;
+    var pool = [
+      ["完璧な台本ができたキュン♡ 深呼吸して、いってらっしゃい！", "これで大丈夫キュン♡ ゆっくり読んで電話してみてね！"],
+      ["どんどん上手くなってるキュン♡ この調子だよ！", "台本ばっちりキュン♡ 自信を持ってかけてみてね！"],
+      ["ファイター、行くキュン！⚡あなたなら絶対できる！", "電話、楽しんじゃえキュン！⚡かっこいい台本できたよ！"],
+      ["さすが電話戦士キュン！🔥もう台本なしでも話せそうだね！", "完璧キュン！🔥電話が怖くなんてない、そうでしょキュン？"],
+      ["マスターの台本、完成キュン！👑もう電話は友達だキュン♡", "👑伝説の一本、行ってらっしゃいキュン！"],
+    ];
+    var msgs = pool[Math.min(lv - 1, pool.length - 1)];
+    return msgs[Math.floor(Math.random() * msgs.length)];
+  }
+
+  /* ── State ─────────────────────────────────── */
+  const S = {
+    apiKey:     "",
+    humeKey:    "",
+    provider:   "groq",
+    callerType: "external",
+    keigoLevel: "standard",
+    purpose:    "",
+    isLoading:  false,
+    script:     "",
+    history:    [],
+    modalOpen:  false,
+    sbUrl:      "",
+    sbKey:      "",
+  };
+
+  /* ── DOM helpers ────────────────────────────── */
+  const $ = id => document.getElementById(id);
+  const D = {
+    mascot:    $("fC_mascotMsg"),
+    purpose:   $("fC_purpose"),
+    charCount: $("fC_charCount"),
+    genBtn:    $("fC_genBtn"),
+    genIcon:   null, // refreshed dynamically
+    genLabel:  $("fC_genLabel"),
+    result:    $("fC_result"),
+    scriptBox: $("fC_scriptBox"),
+    copyBtn:   $("fC_copyBtn"),
+    printBtn:  $("fC_printBtn"),
+    regenBtn:  $("fC_regenBtn"),
+    history:   $("fC_history"),
+    histList:  $("fC_histList"),
+    modal:     $("fC_modal"),
+    provider:  $("fC_provider"),
+    provHint:  $("fC_providerHint"),
+    apiKey:      $("fC_apiKey"),
+    humeKey:     $("fC_humeKey"),
+    saveBtn:     $("fC_saveBtn"),
+    cancelBtn:   $("fC_cancelBtn"),
+    clearBtn:    $("fC_clearBtn"),
+    toasts:      $("fC_toasts"),
+    settings:    $("fC_settingsBtn"),
+    practiceBtn: $("fC_practiceBtn"),
+    practice:    $("fC_practice"),
+    recBtn:      $("fC_recBtn"),
+    recStatus:   $("fC_recStatus"),
+    pracScript:  $("fC_pracScript"),
+    pracResult:  $("fC_pracResult"),
+    pracClose:   $("fC_pracClose"),
+  };
+
+  /* ── Toast ──────────────────────────────────── */
+  function toast(msg, type, ms) {
+    ms = ms || 3500;
+    const el = document.createElement("div");
+    el.className = "fC_toast" + (type ? " " + type : "");
+    el.textContent = msg;
+    D.toasts.appendChild(el);
+    setTimeout(function () {
+      el.style.transition = "all 0.3s ease";
+      el.style.opacity = "0";
+      el.style.transform = "translateY(8px)";
+      setTimeout(function () { el.remove(); }, 320);
+    }, ms);
+  }
+
+  /* ── Storage ────────────────────────────────── */
+  function loadStorage() {
+    S.apiKey   = localStorage.getItem(LS_KEY)    || "";
+    S.humeKey  = localStorage.getItem(LS_HUME)   || "";
+    S.provider = localStorage.getItem(LS_PROV)   || "groq";
+    S.sbUrl    = localStorage.getItem(LS_SB_URL) || "";
+    S.sbKey    = localStorage.getItem(LS_SB_KEY) || "";
+    try { S.history = JSON.parse(localStorage.getItem(LS_HIST) || "[]"); }
+    catch (_) { S.history = []; }
+  }
+
+  function saveKey(key, provider, humeKey, sbUrl, sbKey) {
+    S.apiKey   = key;
+    S.provider = provider;
+    S.humeKey  = humeKey || "";
+    S.sbUrl    = sbUrl   || "";
+    S.sbKey    = sbKey   || "";
+    localStorage.setItem(LS_KEY,  key);
+    localStorage.setItem(LS_PROV, provider);
+    if (humeKey) localStorage.setItem(LS_HUME,   humeKey);
+    else localStorage.removeItem(LS_HUME);
+    if (sbUrl)   localStorage.setItem(LS_SB_URL, sbUrl);
+    else localStorage.removeItem(LS_SB_URL);
+    if (sbKey)   localStorage.setItem(LS_SB_KEY, sbKey);
+    else localStorage.removeItem(LS_SB_KEY);
+  }
+
+  function addHistory(entry) {
+    S.history.unshift(entry);
+    if (S.history.length > 3) S.history.length = 3;
+    localStorage.setItem(LS_HIST, JSON.stringify(S.history));
+    renderHistory();
+    pushHistoryEntry(entry);
+  }
+
+  /* ── Mascot ─────────────────────────────────── */
+  function mascot(msg) { D.mascot.textContent = msg; }
+
+  /* ── Char count ─────────────────────────────── */
+  function updateCount(n) {
+    D.charCount.textContent = n + "/300";
+    D.charCount.style.color = n > 250 ? "var(--warning)" : "var(--text-muted)";
+  }
+
+  /* ── Loading state ──────────────────────────── */
+  function setLoading(on) {
+    S.isLoading = on;
+    D.genBtn.disabled = on;
+    var iconEl = $("fC_genIcon");
+    if (on) {
+      D.genLabel.textContent = "台本を考えてるキュン…";
+      var sp = document.createElement("span");
+      sp.className = "fC_spinner";
+      sp.id = "fC_genIcon";
+      sp.setAttribute("aria-hidden", "true");
+      if (iconEl) iconEl.replaceWith(sp);
+    } else {
+      D.genLabel.textContent = "台本を作ってキュン♡";
+      var ic = document.createElement("span");
+      ic.id = "fC_genIcon";
+      ic.setAttribute("aria-hidden", "true");
+      ic.textContent = "✨";
+      var cur = $("fC_genIcon");
+      if (cur) cur.replaceWith(ic);
+    }
+  }
+
+  /* ── Prompt ─────────────────────────────────── */
+  function buildPrompt() {
+    var callerMap = {
+      internal: "庁内・社内（内線や同僚・上司）の相手",
+      external: "庁外・社外の相手（取引先・市民・業者など）",
+    };
+    var keigoMap = {
+      humble:   "謙譲語を多用した非常に丁寧な敬語（最も丁寧）",
+      standard: "一般的な丁寧語・敬語（標準的なビジネス電話）",
+      friendly: "社内の親しい同僚向けの少し柔らかい口調（丁寧だが砕けすぎない）",
+    };
+    return [
+      "あなたはビジネス電話の専門コーチです。",
+      "以下の条件で電話をかける際の台本（冒頭〜本題への入り方）を作成してください。",
+      "",
+      "## 条件",
+      "- 通話相手: " + callerMap[S.callerType],
+      "- 電話の目的: " + S.purpose,
+      "- 敬語レベル: " + keigoMap[S.keigoLevel],
+      "",
+      "## 出力ルール",
+      "- 挨拶・名乗りから本題の切り出しまで、声に出しやすい自然な日本語で。",
+      "- 名前・部署名は「〇〇」でプレースホルダーにすること。",
+      "- 台本テキストのみ出力（見出し・説明文は不要）。",
+      "- 200〜350字程度。",
+    ].join("\n");
+  }
+
+  /* ── API calls ──────────────────────────────── */
+  function callGemini(key, prompt) {
+    var url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key="
+              + encodeURIComponent(key);
+    return fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { temperature: 0.72, maxOutputTokens: 800 },
+      }),
+    }).then(function (res) {
+      if (!res.ok) {
+        return res.json().catch(function () { return {}; }).then(function (err) {
+          var code = (err.error && err.error.code) || res.status;
+          var msg  = (err.error && err.error.message) || "";
+          console.error("[Gemini API Error] code:", code, "message:", msg, "full:", JSON.stringify(err));
+          if (code === 400 && msg.indexOf("API_KEY") >= 0) throw new Error("INVALID_KEY");
+          if (code === 429 || res.status === 429) throw new Error("RATE_LIMIT:" + msg);
+          throw new Error("API_ERROR:" + code);
+        });
+      }
+      return res.json();
+    }).then(function (data) {
+      var text = data &&
+                 data.candidates &&
+                 data.candidates[0] &&
+                 data.candidates[0].content &&
+                 data.candidates[0].content.parts &&
+                 data.candidates[0].content.parts[0] &&
+                 data.candidates[0].content.parts[0].text;
+      if (!text) throw new Error("EMPTY_RESPONSE");
+      return text;
+    });
+  }
+
+  function callGroq(key, prompt) {
+    return fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + key,
+      },
+      body: JSON.stringify({
+        model: "llama-3.3-70b-versatile",
+        messages: [{ role: "user", content: prompt }],
+        max_tokens: 800,
+        temperature: 0.72,
+      }),
+    }).then(function (res) {
+      if (!res.ok) {
+        return res.json().catch(function () { return {}; }).then(function (err) {
+          console.error("[Groq API Error]", JSON.stringify(err));
+          if (res.status === 401) throw new Error("INVALID_KEY");
+          if (res.status === 429) throw new Error("RATE_LIMIT");
+          throw new Error("API_ERROR:" + res.status);
+        });
+      }
+      return res.json();
+    }).then(function (data) {
+      var text = data &&
+                 data.choices &&
+                 data.choices[0] &&
+                 data.choices[0].message &&
+                 data.choices[0].message.content;
+      if (!text) throw new Error("EMPTY_RESPONSE");
+      return text;
+    });
+  }
+
+  function callOpenAI(key, prompt) {
+    return fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + key,
+      },
+      body: JSON.stringify({
+        model: "gpt-3.5-turbo",
+        messages: [{ role: "user", content: prompt }],
+        max_tokens: 800,
+        temperature: 0.72,
+      }),
+    }).then(function (res) {
+      if (!res.ok) {
+        return res.json().catch(function () { return {}; }).then(function (err) {
+          if (res.status === 401) throw new Error("INVALID_KEY");
+          if (res.status === 429) throw new Error("RATE_LIMIT");
+          throw new Error("API_ERROR:" + res.status);
+        });
+      }
+      return res.json();
+    }).then(function (data) {
+      var text = data &&
+                 data.choices &&
+                 data.choices[0] &&
+                 data.choices[0].message &&
+                 data.choices[0].message.content;
+      if (!text) throw new Error("EMPTY_RESPONSE");
+      return text;
+    });
+  }
+
+  function callAPI(prompt) {
+    if (S.provider === "openai") return callOpenAI(S.apiKey, prompt);
+    if (S.provider === "groq")   return callGroq(S.apiKey, prompt);
+    return callGemini(S.apiKey, prompt);
+  }
+
+  /* 429 発生時に60秒待って1回だけリトライ（レート制限は1分単位でリセット） */
+  function callWithRetry(prompt, retries) {
+    if (retries === undefined) retries = 1;
+    return callAPI(prompt).catch(function (err) {
+      if (err.message === "RATE_LIMIT" && retries > 0) {
+        toast("⏳ レート制限キュン… 60秒後に自動リトライするね♡", "warning", 61000);
+        return new Promise(function (resolve) { setTimeout(resolve, 60000); })
+          .then(function () { return callWithRetry(prompt, retries - 1); });
+      }
+      throw err;
+    });
+  }
+
+  function errMsg(err) {
+    if (err.message === "INVALID_KEY")
+      return "🔑 APIキーが正しくないみたいキュン…💦 設定ボタンでキーを確認してみてね♡";
+    if (err.message === "RATE_LIMIT")
+      return "⏳ ちょっと使いすぎちゃったキュン… 少し待ってからもう一度試してね♡";
+    if (err.message === "EMPTY_RESPONSE")
+      return "🤔 AIから返答がなかったキュン… もう一度試してみてね♡";
+    if (err.name === "TypeError" || err.message === "Failed to fetch")
+      return "📡 ネットに繋がれないみたいキュン… インターネット接続を確認してね♡";
+    return "🚨 なにか問題が起きちゃったキュン…（" + err.message + "）もう一度試してね♡";
+  }
+
+  /* ── Generate ───────────────────────────────── */
+  function generate() {
+    if (!S.apiKey) {
+      openModal(true);
+      toast("💡 まずAPIキーを設定してね♡", "warning");
+      return;
+    }
+    if (!S.purpose.trim()) {
+      toast("📝 電話の目的を入力してね♡", "warning");
+      D.purpose.focus();
+      return;
+    }
+    mascot(preGenMsg());
+    setLoading(true);
+    callWithRetry(buildPrompt())
+      .then(function (text) {
+        S.script = text.trim();
+        D.scriptBox.textContent = S.script;
+        D.result.classList.add("visible");
+        addHistory({
+          script:     S.script,
+          purpose:    S.purpose,
+          callerType: S.callerType,
+          keigoLevel: S.keigoLevel,
+          date:       new Date().toLocaleString("ja-JP"),
+        });
+        var result = recordCall(S.callerType, S.keigoLevel);
+        var msg    = postGenMsg(result.leveled);
+        if (msg) mascot(msg);
+        toast("✨ 台本ができたキュン♡", "success");
+        setTimeout(function () {
+          D.result.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        }, 80);
+      })
+      .catch(function (err) {
+        toast(errMsg(err), "error", 5500);
+        mascot("うまくいかなかったキュン…💦 エラーの内容を確認してもう一度試してね♡");
+      })
+      .finally(function () { setLoading(false); });
+  }
+
+  /* ── Copy ───────────────────────────────────── */
+  function copyScript() {
+    if (!S.script) return;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(S.script)
+        .then(function () { toast("📋 コピーできたキュン♡ いつでも使ってね！", "success"); })
+        .catch(fallbackCopy);
+    } else {
+      fallbackCopy();
+    }
+  }
+
+  function fallbackCopy() {
+    var ta = document.createElement("textarea");
+    ta.value = S.script;
+    ta.style.cssText = "position:fixed;opacity:0;top:0;left:0;";
+    document.body.appendChild(ta);
+    ta.select();
+    try {
+      document.execCommand("copy");
+      toast("📋 コピーできたキュン♡", "success");
+    } catch (_) {
+      toast("😅 コピーできなかったキュン… 手動でコピーしてね♡", "error");
+    }
+    document.body.removeChild(ta);
+  }
+
+  /* ── History ────────────────────────────────── */
+  function renderHistory() {
+    if (!S.history.length) {
+      D.history.classList.remove("visible");
+      return;
+    }
+    D.history.classList.add("visible");
+    var frag = document.createDocumentFragment();
+    S.history.forEach(function (h, i) {
+      var div = document.createElement("div");
+      div.className = "fC_hist-item";
+      div.setAttribute("role", "button");
+      div.setAttribute("tabindex", "0");
+      div.setAttribute("aria-label", "履歴" + (i + 1) + ": " + h.purpose);
+      div.dataset.hi = i;
+
+      var meta = document.createElement("small");
+      meta.style.cssText = "display:block;color:var(--text-muted);margin-bottom:0.15em;";
+      meta.textContent = h.date + "  |  " + (h.callerType === "internal" ? "庁内" : "庁外");
+
+      var txt = document.createElement("span");
+      txt.textContent = h.purpose.length > 55 ? h.purpose.slice(0, 55) + "…" : h.purpose;
+
+      div.appendChild(meta);
+      div.appendChild(txt);
+      frag.appendChild(div);
+    });
+    while (D.histList.firstChild) D.histList.removeChild(D.histList.firstChild);
+    D.histList.appendChild(frag);
+  }
+
+  function loadHistoryItem(i) {
+    var h = S.history[i];
+    if (!h) return;
+    S.script = h.script;
+    D.scriptBox.textContent = h.script;
+    D.result.classList.add("visible");
+    toast("📜 履歴から読み込んだキュン♡", "success");
+    D.result.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }
+
+  /* ── Modal ──────────────────────────────────── */
+  function updateProviderHint() {
+    var hints = {
+      groq:   "🚀 console.groq.com で無料取得！クレカ不要・1日14,400回まで完全無料キュン♡",
+      gemini: "🌟 Google AI Studioで取得できます（日本ではプリペイド課金が必要キュン）",
+      openai: "💳 OpenAIの従量課金APIキーです。クレジット購入が必要キュン",
+    };
+    D.provHint.textContent = hints[D.provider.value] || "";
+  }
+
+  function openModal(isFirst) {
+    D.apiKey.value   = S.apiKey;
+    D.humeKey.value  = S.humeKey;
+    D.provider.value = S.provider;
+    var sbUrlEl = $("fC_sbUrl");
+    var sbKeyEl = $("fC_sbKey");
+    if (sbUrlEl) sbUrlEl.value = S.sbUrl;
+    if (sbKeyEl) sbKeyEl.value = S.sbKey;
+    updateProviderHint();
+    renderSbAuthBox();
+    D.cancelBtn.style.visibility = isFirst ? "hidden" : "visible";
+    D.modal.classList.add("open");
+    S.modalOpen = true;
+    setTimeout(function () { D.apiKey.focus(); }, 120);
+  }
+
+  function closeModal() {
+    D.modal.classList.remove("open");
+    S.modalOpen = false;
+  }
+
+  /* ── Event delegation ───────────────────────── */
+  document.addEventListener("click", function (e) {
+    var btn = e.target.closest("[data-action]");
+    if (!btn) return;
+    var action = btn.dataset.action;
+    var value  = btn.dataset.value;
+
+    if (action === "callerType") {
+      S.callerType = value;
+      document.querySelectorAll("[data-action=callerType]").forEach(function (b) {
+        b.setAttribute("aria-pressed", b.dataset.value === value ? "true" : "false");
+      });
+      mascot("「" + (value === "internal" ? "庁内・社内" : "庁外・社外") + "」への電話ね♡ 目的も入力してね、台本作るキュン♡");
+    }
+
+    if (action === "keigo") {
+      S.keigoLevel = value;
+      document.querySelectorAll("[data-action=keigo]").forEach(function (b) {
+        b.setAttribute("aria-pressed", b.dataset.value === value ? "true" : "false");
+      });
+    }
+
+    if (action === "template") {
+      var text = btn.dataset.text;
+      D.purpose.value = text;
+      S.purpose = text;
+      updateCount(text.length);
+      D.purpose.focus();
+      mascot("いいね♡ 詳細を追加してもOKだキュンよ♡");
+    }
+  });
+
+  D.histList.addEventListener("click", function (e) {
+    var item = e.target.closest("[data-hi]");
+    if (item) loadHistoryItem(Number(item.dataset.hi));
+  });
+  D.histList.addEventListener("keydown", function (e) {
+    if (e.key === "Enter" || e.key === " ") {
+      var item = e.target.closest("[data-hi]");
+      if (item) { e.preventDefault(); loadHistoryItem(Number(item.dataset.hi)); }
+    }
+  });
+
+  D.genBtn.addEventListener("click",     generate);
+  D.regenBtn.addEventListener("click",   generate);
+  D.copyBtn.addEventListener("click",    copyScript);
+  D.printBtn.addEventListener("click",   function () { window.print(); });
+  D.settings.addEventListener("click",  function () { openModal(false); });
+  D.cancelBtn.addEventListener("click",  closeModal);
+
+  D.saveBtn.addEventListener("click", function () {
+    var key   = D.apiKey.value.trim();
+    var hume  = D.humeKey.value.trim();
+    var sbUrl = ($("fC_sbUrl") || {}).value ? $("fC_sbUrl").value.trim() : "";
+    var sbKey = ($("fC_sbKey") || {}).value ? $("fC_sbKey").value.trim() : "";
+    if (!key) { toast("🔑 APIキーを入力してね♡", "warning"); return; }
+    saveKey(key, D.provider.value, hume, sbUrl, sbKey);
+    if (sbUrl && sbKey) initSupabase(sbUrl, sbKey);
+    closeModal();
+    var msg = hume ? "✅ APIキーとHume AIキーを保存したキュン♡ 音読練習もできるよ！" : "✅ APIキーを保存したキュン♡ 台本が作れるよ！";
+    if (sbUrl && sbKey) msg += " ☁️ クラウド同期も設定したキュン！";
+    toast(msg, "success");
+    mascot("APIキーの設定完了キュン♡ 電話の目的を入力して台本を作ろう！");
+  });
+
+  D.clearBtn.addEventListener("click", function () {
+    localStorage.removeItem(LS_KEY);
+    localStorage.removeItem(LS_PROV);
+    localStorage.removeItem(LS_HUME);
+    localStorage.removeItem(LS_SB_URL);
+    localStorage.removeItem(LS_SB_KEY);
+    S.apiKey   = "";
+    S.humeKey  = "";
+    S.provider = "groq";
+    S.sbUrl    = "";
+    S.sbKey    = "";
+    _sb     = null;
+    _sbUser = null;
+    D.apiKey.value   = "";
+    D.humeKey.value  = "";
+    D.provider.value = "groq";
+    var sbUrlEl = $("fC_sbUrl"); if (sbUrlEl) sbUrlEl.value = "";
+    var sbKeyEl = $("fC_sbKey"); if (sbKeyEl) sbKeyEl.value = "";
+    updateCloudBtn();
+    closeModal();
+    toast("🗑️ 全キーを削除したキュン♡", "warning");
+  });
+
+  D.provider.addEventListener("change", updateProviderHint);
+
+  $("fC_cloudBtn").addEventListener("click", function() {
+    openModal(false);
+    setTimeout(function() {
+      var el = $("fC_sbUrl");
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }, 180);
+  });
+
+  /* ── Practice mode ──────────────────────────── */
+  var mediaRec = null, audioChunks = [], isRecording = false;
+
+  function openPractice() {
+    D.pracScript.textContent = S.script;
+    D.pracResult.innerHTML   = "";
+    D.recStatus.textContent  = "";
+    D.recBtn.textContent     = "🎤 録音開始";
+    D.recBtn.className       = "fC_rec-btn";
+    D.recBtn.disabled        = false;
+    D.recBtn.style.display   = "";
+    D.practice.classList.add("visible");
+    D.practice.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    mascot("台本を見ながら声に出して読んでキュン♡ 録音ボタンを押して始めてね！");
+  }
+
+  function toggleRecording() {
+    if (!isRecording) startRecording(); else stopRecording();
+  }
+
+  function startRecording() {
+    navigator.mediaDevices.getUserMedia({ audio: true }).then(function(stream) {
+      audioChunks = [];
+      mediaRec = new MediaRecorder(stream, { mimeType: MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm" : "audio/ogg" });
+      mediaRec.ondataavailable = function(e) { if (e.data.size > 0) audioChunks.push(e.data); };
+      mediaRec.onstop = function() {
+        stream.getTracks().forEach(function(t) { t.stop(); });
+        var blob = new Blob(audioChunks, { type: mediaRec.mimeType });
+        analyzeRecording(blob);
+      };
+      mediaRec.start();
+      isRecording = true;
+      D.recBtn.textContent = "⏹ 録音停止";
+      D.recBtn.classList.add("recording");
+      D.recStatus.innerHTML = '<span class="fC_rec-dot"></span> 録音中...';
+      mascot("録音中キュン♡ 台本を声に出して読んでね！終わったら停止を押してキュン！");
+    }).catch(function() {
+      toast("🎤 マイクが使えないキュン… ブラウザの設定でマイクを許可してね♡", "error", 5000);
+    });
+  }
+
+  function stopRecording() {
+    if (mediaRec && isRecording) {
+      mediaRec.stop();
+      isRecording = false;
+      D.recBtn.textContent = "⏳ 分析中キュン…";
+      D.recBtn.classList.remove("recording");
+      D.recBtn.disabled    = true;
+      D.recStatus.textContent = "";
+      mascot("ちょっと待ってキュン♡ ふじキュンが声を分析してるよ〜！");
+    }
+  }
+
+  function analyzeRecording(blob) {
+    var p1 = (S.provider === "groq" && S.apiKey)
+      ? transcribeWithWhisper(blob)
+      : Promise.resolve("");
+    var p2 = S.humeKey
+      ? analyzeWithHume(blob)
+      : Promise.resolve(null);
+
+    Promise.all([p1, p2]).then(function(res) {
+      renderPracticeResult(res[0], res[1]);
+    }).catch(function(err) {
+      console.error("[Practice]", err);
+      D.recBtn.textContent = "🎤 録音開始";
+      D.recBtn.disabled    = false;
+      toast("😅 分析に失敗したキュン… もう一度試してね♡", "error");
+    });
+  }
+
+  function transcribeWithWhisper(blob) {
+    var fd = new FormData();
+    fd.append("file", blob, "rec.webm");
+    fd.append("model", "whisper-large-v3");
+    fd.append("language", "ja");
+    return fetch("https://api.groq.com/openai/v1/audio/transcriptions", {
+      method: "POST",
+      headers: { "Authorization": "Bearer " + S.apiKey },
+      body: fd,
+    }).then(function(r) { return r.json(); })
+      .then(function(d) { return d.text || ""; });
+  }
+
+  function analyzeWithHume(blob) {
+    var fd = new FormData();
+    fd.append("json", JSON.stringify({ models: { prosody: {} } }));
+    fd.append("file", blob, "rec.webm");
+    return fetch("https://api.hume.ai/v0/batch/jobs", {
+      method: "POST",
+      headers: { "X-Hume-Api-Key": S.humeKey },
+      body: fd,
+    }).then(function(r) { return r.json(); })
+      .then(function(d) {
+        if (!d.job_id) throw new Error("No job_id from Hume");
+        return pollHumeJob(d.job_id);
+      });
+  }
+
+  function pollHumeJob(jobId) {
+    return new Promise(function(resolve, reject) {
+      var tries = 0;
+      var timer = setInterval(function() {
+        if (++tries > 30) { clearInterval(timer); reject(new Error("Hume timeout")); return; }
+        fetch("https://api.hume.ai/v0/batch/jobs/" + jobId, {
+          headers: { "X-Hume-Api-Key": S.humeKey },
+        }).then(function(r) { return r.json(); })
+          .then(function(d) {
+            var status = d.state && d.state.status;
+            if (status === "COMPLETED") {
+              clearInterval(timer);
+              fetch("https://api.hume.ai/v0/batch/jobs/" + jobId + "/predictions", {
+                headers: { "X-Hume-Api-Key": S.humeKey },
+              }).then(function(r) { return r.json(); })
+                .then(function(preds) { resolve(extractHumeScores(preds)); })
+                .catch(reject);
+            } else if (status === "FAILED") {
+              clearInterval(timer); reject(new Error("Hume job failed"));
+            }
+          }).catch(function() {});
+      }, 2000);
+    });
+  }
+
+  function extractHumeScores(preds) {
+    try {
+      var segs = preds[0].results.predictions[0].models.prosody.grouped_predictions[0].predictions;
+      var totals = {}, n = segs.length;
+      segs.forEach(function(seg) {
+        seg.emotions.forEach(function(e) { totals[e.name] = (totals[e.name] || 0) + e.score; });
+      });
+      var avg = {};
+      Object.keys(totals).forEach(function(k) { avg[k] = totals[k] / n; });
+      var conf = ((avg["Determination"]||0) + (avg["Enthusiasm"]||0) + (avg["Calmness"]||0) + (avg["Interest"]||0)) / 4;
+      var anx  = (avg["Anxiety"]||0) * 0.7 + (avg["Distress"]||0) * 0.3;
+      var enrg = ((avg["Excitement"]||0) + (avg["Enthusiasm"]||0)) / 2;
+      var calm = avg["Calmness"] || 0;
+      var top5 = Object.entries(avg).sort(function(a,b){return b[1]-a[1];}).slice(0,5).map(function(e){return e[0];});
+      return {
+        confidence: Math.min(Math.round(conf * 300), 100),
+        anxiety:    Math.min(Math.round(anx  * 400), 100),
+        energy:     Math.min(Math.round(enrg * 300), 100),
+        calmness:   Math.min(Math.round(calm * 400), 100),
+        top5: top5,
+      };
+    } catch(e) { return null; }
+  }
+
+  function renderPracticeResult(transcript, scores) {
+    var feedbackPrompt = [
+      "あなたは「ふじキュン♡」という電話コーチです。",
+      "ユーザーが電話台本を音読練習しました。必ずポジティブで励ましになるフィードバックを日本語2〜3文で書いてください。",
+      "良い点を必ず1つ以上見つけて褒め、改善点は前向きな提案として伝えてください。絶対に批判しないでください。",
+      "語尾は「キュン」「キュン♡」を自然に使ってください。",
+      "",
+      "【元の台本（抜粋）】",
+      S.script.slice(0, 150),
+      "",
+      "【実際に話した内容（Whisper文字起こし）】",
+      transcript || "（文字起こしなし）",
+      "",
+      "【Hume AIによる声の分析】",
+      scores
+        ? "自信度:" + scores.confidence + "%, 不安度:" + scores.anxiety + "%, エネルギー:" + scores.energy + "%, 落ち着き:" + scores.calmness + "%, 声で感じた感情トップ5:" + scores.top5.join("・")
+        : "（音声分析なし・Whisperのみ）",
+    ].join("\n");
+
+    callGroq(S.apiKey, feedbackPrompt).then(function(feedback) {
+      showPracticeResult(transcript, scores, feedback);
+      mascot(feedback.replace(/\n/g, " ").slice(0, 60) + "♡");
+    }).catch(function() {
+      showPracticeResult(transcript, scores, "よく読めてたキュン♡ この調子で電話してみてね！");
+    });
+  }
+
+  function showPracticeResult(transcript, scores, feedback) {
+    var scoresHTML = "";
+    if (scores) {
+      scoresHTML = '<div class="fC_prac-scores">'
+        + scoreBar("💪 自信度",   scores.confidence)
+        + scoreBar("⚡ エネルギー", scores.energy)
+        + scoreBar("😌 落ち着き",  scores.calmness)
+        + '</div>';
+    }
+    var transcriptHTML = transcript
+      ? '<div class="fC_prac-transcript"><div class="fC_prac-transcript-label">📝 あなたが話した言葉：</div><div class="fC_prac-transcript-text">' + escHtml(transcript) + '</div></div>'
+      : "";
+
+    D.pracResult.innerHTML =
+      '<div class="fC_prac-feedback"><div class="fC_prac-feedback-icon">🌸</div><div class="fC_prac-feedback-text">' + escHtml(feedback) + '</div></div>'
+      + scoresHTML + transcriptHTML
+      + '<div class="fC_prac-btns">'
+      + '<button class="fC_act-btn" id="fC_rerecBtn">🎤 もう一回練習</button>'
+      + '<button class="fC_act-btn fC_act-btn--practice" id="fC_callNowBtn">📞 よし、電話する！</button>'
+      + '</div>';
+
+    D.recBtn.style.display = "none";
+
+    $("fC_rerecBtn").addEventListener("click", function() {
+      D.pracResult.innerHTML = "";
+      D.recBtn.style.display = "";
+      D.recBtn.textContent   = "🎤 録音開始";
+      D.recBtn.disabled      = false;
+      mascot("もう一回練習するキュン♡ 今度はさらに自信を持って読んでみてね！");
+    });
+    $("fC_callNowBtn").addEventListener("click", function() {
+      D.practice.classList.remove("visible");
+      mascot("いってらっしゃいキュン！！🔥 練習バッチリだから絶対大丈夫キュン♡");
+      toast("💪 練習完了！自信を持って電話してキュン♡", "success", 4000);
+    });
+  }
+
+  function scoreBar(label, val) {
+    var color = val >= 70 ? "#10b981" : val >= 40 ? "#f59e0b" : "#63b3ed";
+    return '<div class="fC_score-row"><span class="fC_score-label">' + label + '</span>'
+      + '<div class="fC_score-bar-wrap"><div class="fC_score-bar" style="width:' + val + '%;background:' + color + '"></div></div>'
+      + '<span class="fC_score-val">' + val + '%</span></div>';
+  }
+
+  function escHtml(s) {
+    return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  }
+
+  D.practiceBtn.addEventListener("click", openPractice);
+  D.pracClose.addEventListener("click",   function() { D.practice.classList.remove("visible"); });
+  D.recBtn.addEventListener("click",      toggleRecording);
+
+  D.modal.addEventListener("click", function (e) {
+    if (e.target === D.modal) closeModal();
+  });
+
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape" && S.modalOpen) closeModal();
+  });
+
+  D.purpose.addEventListener("input", function (e) {
+    S.purpose = e.target.value;
+    updateCount(e.target.value.length);
+  });
+
+  /* ── Global error handlers ──────────────────── */
+  window.addEventListener("error", function (e) {
+    console.error("[FujiCall]", e.error);
+    toast("😵 予期せぬエラーが起きちゃったキュン… ページを再読み込みしてみてね♡", "error", 5000);
+  });
+  window.addEventListener("unhandledrejection", function (e) {
+    console.error("[FujiCall] unhandledRejection:", e.reason);
+  });
+
+  /* ── Supabase Cloud Sync ────────────────────── */
+  function initSupabase(url, key) {
+    if (!url || !key || !window.supabase) return;
+    try {
+      _sb = window.supabase.createClient(url, key);
+      _sb.auth.onAuthStateChange(function(event, session) {
+        _sbUser = session ? session.user : null;
+        updateCloudBtn();
+        renderSbAuthBox();
+        if (_sbUser) syncFromCloud();
+      });
+      _sb.auth.getSession().then(function(res) {
+        _sbUser = (res.data && res.data.session) ? res.data.session.user : null;
+        updateCloudBtn();
+        renderSbAuthBox();
+        if (_sbUser) syncFromCloud();
+      });
+    } catch(e) {
+      console.error("[FujiCall Supabase]", e);
+    }
+  }
+
+  function updateCloudBtn() {
+    var btn = $("fC_cloudBtn");
+    if (!btn) return;
+    btn.classList.remove("fC_cloud-active");
+    if (_sb && _sbUser) {
+      btn.title = "同期中: " + _sbUser.email + "（クリックで設定）";
+      btn.classList.add("fC_cloud-active");
+    } else if (_sb) {
+      btn.title = "クラウド同期: ログインが必要キュン♡（クリックで設定）";
+    } else {
+      btn.title = "クラウド同期（未設定・クリックで設定）";
+    }
+  }
+
+  function renderSbAuthBox() {
+    var box  = $("fC_sbAuthBox");
+    var wrap = $("fC_sbLoginWrap");
+    if (!box || !wrap) return;
+    if (!_sb) { wrap.style.display = "none"; return; }
+    wrap.style.display = "block";
+
+    if (_sbUser) {
+      box.innerHTML =
+        '<div style="display:flex;align-items:center;gap:0.5em;flex-wrap:wrap;padding:0.5em 0;">'
+        + '<span style="font-size:0.8rem;color:var(--success);">✅ ログイン中: ' + escHtml(_sbUser.email) + '</span>'
+        + '<button id="fC_sbLogoutBtn" class="fC_btn-danger" style="min-height:34px;font-size:0.76rem;padding:0 0.8em;">ログアウト</button>'
+        + '</div>';
+      var lo = $("fC_sbLogoutBtn");
+      if (lo) lo.addEventListener("click", function() {
+        _sb.auth.signOut().then(function() {
+          _sbUser = null;
+          updateCloudBtn();
+          renderSbAuthBox();
+          toast("☁️ ログアウトしたキュン♡", "warning");
+        });
+      });
+    } else {
+      box.innerHTML =
+        '<div>'
+        + '<label class="fC_label" for="fC_sbEmail" style="font-size:0.78rem;margin-bottom:0.3em;display:block;">メールでログイン（マジックリンク）</label>'
+        + '<div style="display:flex;gap:0.4em;">'
+        + '<input type="email" class="fC_input" id="fC_sbEmail" placeholder="you@example.com" autocomplete="email" style="flex:1;min-height:40px;">'
+        + '<button id="fC_sbLoginBtn" class="fC_btn-primary" style="flex:none;padding:0 1em;min-height:40px;font-size:0.82rem;min-width:auto;">送信</button>'
+        + '</div>'
+        + '<p class="fC_provider-hint" style="margin-top:0.3em;">📧 届いたメールのリンクをクリックするとログインできるキュン♡</p>'
+        + '</div>';
+      var lb = $("fC_sbLoginBtn");
+      if (lb) lb.addEventListener("click", function() {
+        var emailEl = $("fC_sbEmail");
+        var email = emailEl ? emailEl.value.trim() : "";
+        if (!email) { toast("📧 メールアドレスを入力してキュン♡", "warning"); return; }
+        lb.disabled = true; lb.textContent = "送信中…";
+        _sb.auth.signInWithOtp({
+          email: email,
+          options: { emailRedirectTo: window.location.href }
+        }).then(function(res) {
+          if (res.error) throw res.error;
+          toast("📧 マジックリンクを送ったキュン♡ メールを確認してね！", "success", 7000);
+          if (emailEl) emailEl.value = "";
+        }).catch(function(e) {
+          toast("😵 送信失敗キュン… " + (e.message || ""), "error");
+        }).finally(function() {
+          lb.disabled = false; lb.textContent = "送信";
+        });
+      });
+    }
+  }
+
+  async function syncFromCloud() {
+    if (!_sb || !_sbUser) return;
+    try {
+      var hRes = await _sb.from("call_history")
+        .select("script, purpose, caller_type, keigo_level, date_str, created_at")
+        .eq("user_id", _sbUser.id)
+        .order("created_at", { ascending: false })
+        .limit(3);
+      if (hRes.data && hRes.data.length > 0) {
+        S.history = hRes.data.map(function(h) {
+          return { script: h.script, purpose: h.purpose, callerType: h.caller_type, keigoLevel: h.keigo_level, date: h.date_str };
+        });
+        localStorage.setItem(LS_HIST, JSON.stringify(S.history));
+        renderHistory();
+      }
+      var sRes = await _sb.from("user_stats").select("stats").eq("user_id", _sbUser.id).maybeSingle();
+      if (sRes.data && sRes.data.stats) {
+        var local = loadStats();
+        if ((sRes.data.stats.total || 0) > local.total) {
+          saveStatsDataLocal(sRes.data.stats);
+          renderGrowth();
+        }
+      }
+      toast("☁️ クラウドから同期したキュン♡", "success");
+    } catch(e) {
+      console.error("[FujiCall sync]", e);
+    }
+  }
+
+  async function pushHistoryEntry(entry) {
+    if (!_sb || !_sbUser) return;
+    try {
+      await _sb.from("call_history").insert({
+        user_id:     _sbUser.id,
+        script:      entry.script,
+        purpose:     entry.purpose,
+        caller_type: entry.callerType,
+        keigo_level: entry.keigoLevel,
+        date_str:    entry.date,
+      });
+    } catch(e) { console.error("[FujiCall push history]", e); }
+  }
+
+  async function pushStats(stats) {
+    if (!_sb || !_sbUser) return;
+    try {
+      await _sb.from("user_stats").upsert({
+        user_id:    _sbUser.id,
+        stats:      stats,
+        updated_at: new Date().toISOString(),
+      });
+    } catch(e) { console.error("[FujiCall push stats]", e); }
+  }
+
+  /* ── Init ───────────────────────────────────── */
+  function init() {
+    loadStorage();
+    renderHistory();
+    renderGrowth();
+    updateCloudBtn();
+    if (S.sbUrl && S.sbKey) initSupabase(S.sbUrl, S.sbKey);
+    if (!S.apiKey) {
+      setTimeout(function () { openModal(true); }, 700);
+      mascot("はじめまして！ふじキュン♡だよ♡ まずAPIキーを設定してね。Groqは無料で使えるキュンよ♡");
+    } else {
+      var st = loadStats();
+      var lv = getLevel(st.total);
+      mascot(st.total === 0
+        ? "やあ！ふじキュン♡だキュンよ♡ 電話前の緊張、一緒に解消しようね！"
+        : lv.avatar + " " + lv.name + "のあなた！今日も一緒に頑張るキュン♡");
+    }
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>
