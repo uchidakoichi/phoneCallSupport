@@ -983,13 +983,15 @@
       </select>
       <p class="fC_provider-hint" id="fC_providerHint"></p>
     </div>
+    <div id="fC_apiKeyWrap">
     <div class="fC_form-group">
       <label class="fC_label" for="fC_apiKey">
         APIキー <span style="color:var(--error)" aria-hidden="true">*</span>
       </label>
       <input type="password" class="fC_input" id="fC_apiKey"
-             placeholder="gsk_...（Groq）/ AIzaSy...（Gemini）/ sk-...（OpenAI）"
+             placeholder="AIzaSy...（Gemini）/ sk-...（OpenAI）"
              autocomplete="off" spellcheck="false">
+    </div>
     </div>
     <div class="fC_form-group">
       <label class="fC_label" for="fC_humeKey">
@@ -1000,24 +1002,22 @@
              autocomplete="off" spellcheck="false">
       <p class="fC_provider-hint">🎙 入力すると音読練習で声の感情・抑揚を分析できるキュン♡ <a href="https://platform.hume.ai" target="_blank" rel="noopener noreferrer">platform.hume.ai</a> で無料取得</p>
     </div>
-    <div class="fC_form-group">
-      <label class="fC_label">☁️ クラウド同期 <span style="color:var(--text-muted);font-weight:400;">（任意・どの端末からも履歴を引き継ぎ）</span></label>
-      <input type="url" class="fC_input" id="fC_sbUrl"
-             placeholder="https://xxxx.supabase.co"
-             autocomplete="off" spellcheck="false" style="margin-bottom:0.4em;">
-      <input type="password" class="fC_input" id="fC_sbKey"
-             placeholder="Supabase anon key（公開鍵・安全キュン♡）"
-             autocomplete="off" spellcheck="false">
-      <p class="fC_provider-hint">☁️ <a href="https://supabase.com" target="_blank" rel="noopener">supabase.com</a> で無料プロジェクトを作成してURLとanon keyを入力してキュン♡</p>
-    </div>
-    <div id="fC_sbLoginWrap" style="display:none;margin-bottom:0.85em;">
-      <div id="fC_sbAuthBox"></div>
-    </div>
     <div class="fC_modal-actions">
       <button class="fC_btn-secondary" id="fC_cancelBtn">キャンセル</button>
       <button class="fC_btn-danger"    id="fC_clearBtn">🗑️ 削除</button>
       <button class="fC_btn-primary"   id="fC_saveBtn">✅ 保存してね♡</button>
     </div>
+  </div>
+</div>
+
+<!-- Auth modal (Cloud sync / OTP) -->
+<div class="fC_overlay" id="fC_authModal" role="dialog" aria-modal="true" aria-labelledby="fC_authModalTitle">
+  <div class="fC_modal">
+    <h2 class="fC_modal-title" id="fC_authModalTitle">
+      <span aria-hidden="true">☁️</span> クラウド同期キュン♡
+    </h2>
+    <div id="fC_authContent"></div>
+    <button class="fC_btn-secondary" id="fC_authCloseBtn" style="width:100%;margin-top:1em;min-height:44px;">閉じる</button>
   </div>
 </div>
 
@@ -1034,8 +1034,6 @@
   const LS_HIST   = "fujiCall_history";
   const LS_STATS  = "fujiCall_stats";
   const LS_HUME   = "fujiCall_humeKey";
-  const LS_SB_URL = "fujiCall_sbUrl";
-  const LS_SB_KEY = "fujiCall_sbKey";
 
   var _sb     = null;
   var _sbUser = null;
@@ -1245,8 +1243,6 @@
     script:     "",
     history:    [],
     modalOpen:  false,
-    sbUrl:      "",
-    sbKey:      "",
     demoMode:   false,
   };
 
@@ -1305,26 +1301,18 @@
     S.apiKey   = localStorage.getItem(LS_KEY)    || "";
     S.humeKey  = localStorage.getItem(LS_HUME)   || "";
     S.provider = localStorage.getItem(LS_PROV)   || "groq";
-    S.sbUrl    = localStorage.getItem(LS_SB_URL) || "";
-    S.sbKey    = localStorage.getItem(LS_SB_KEY) || "";
     try { S.history = JSON.parse(localStorage.getItem(LS_HIST) || "[]"); }
     catch (_) { S.history = []; }
   }
 
-  function saveKey(key, provider, humeKey, sbUrl, sbKey) {
+  function saveKey(key, provider, humeKey) {
     S.apiKey   = key;
     S.provider = provider;
     S.humeKey  = humeKey || "";
-    S.sbUrl    = sbUrl   || "";
-    S.sbKey    = sbKey   || "";
     localStorage.setItem(LS_KEY,  key);
     localStorage.setItem(LS_PROV, provider);
-    if (humeKey) localStorage.setItem(LS_HUME,   humeKey);
-    else localStorage.removeItem(LS_HUME);
-    if (sbUrl)   localStorage.setItem(LS_SB_URL, sbUrl);
-    else localStorage.removeItem(LS_SB_URL);
-    if (sbKey)   localStorage.setItem(LS_SB_KEY, sbKey);
-    else localStorage.removeItem(LS_SB_KEY);
+    if (humeKey) localStorage.setItem(LS_HUME, humeKey);
+    else         localStorage.removeItem(LS_HUME);
   }
 
   function addHistory(entry) {
@@ -1688,27 +1676,31 @@
   /* ── Modal ──────────────────────────────────── */
   function updateProviderHint() {
     var hints = {
-      groq:   "🚀 console.groq.com で無料取得！クレカ不要・1日14,400回まで完全無料キュン♡",
+      groq:   "🚀 GroqはAPIキー不要キュン♡ サーバー側で管理しているのでそのまま使えるよ！",
       gemini: "🌟 Google AI Studioで取得できます（日本ではプリペイド課金が必要キュン）",
       openai: "💳 OpenAIの従量課金APIキーです。クレジット購入が必要キュン",
     };
     D.provHint.textContent = hints[D.provider.value] || "";
   }
 
+  function updateApiKeyVisibility() {
+    var wrap = $("fC_apiKeyWrap");
+    if (!wrap) return;
+    wrap.style.display = D.provider.value === "groq" ? "none" : "";
+  }
+
   function openModal(isFirst) {
     D.apiKey.value   = S.apiKey;
     D.humeKey.value  = S.humeKey;
     D.provider.value = S.provider;
-    var sbUrlEl = $("fC_sbUrl");
-    var sbKeyEl = $("fC_sbKey");
-    if (sbUrlEl) sbUrlEl.value = S.sbUrl;
-    if (sbKeyEl) sbKeyEl.value = S.sbKey;
     updateProviderHint();
-    renderSbAuthBox();
+    updateApiKeyVisibility();
     D.cancelBtn.style.visibility = isFirst ? "hidden" : "visible";
     D.modal.classList.add("open");
     S.modalOpen = true;
-    setTimeout(function () { D.apiKey.focus(); }, 120);
+    setTimeout(function () {
+      (D.provider.value === "groq" ? D.humeKey : D.apiKey).focus();
+    }, 120);
   }
 
   function closeModal() {
@@ -1767,52 +1759,49 @@
   D.cancelBtn.addEventListener("click",  closeModal);
 
   D.saveBtn.addEventListener("click", function () {
-    var key   = D.apiKey.value.trim();
-    var hume  = D.humeKey.value.trim();
-    var sbUrl = ($("fC_sbUrl") || {}).value ? $("fC_sbUrl").value.trim() : "";
-    var sbKey = ($("fC_sbKey") || {}).value ? $("fC_sbKey").value.trim() : "";
-    if (!key) { toast("🔑 APIキーを入力してね♡", "warning"); return; }
-    saveKey(key, D.provider.value, hume, sbUrl, sbKey);
-    if (sbUrl && sbKey) initSupabase(sbUrl, sbKey);
+    var key  = D.apiKey.value.trim();
+    var hume = D.humeKey.value.trim();
+    if (D.provider.value !== "groq" && !key) {
+      toast("🔑 APIキーを入力してね♡", "warning"); return;
+    }
+    saveKey(key, D.provider.value, hume);
     if (S.demoMode) exitDemoMode();
     closeModal();
-    var msg = hume ? "✅ APIキーとHume AIキーを保存したキュン♡ 音読練習もできるよ！" : "✅ APIキーを保存したキュン♡ 台本が作れるよ！";
-    if (sbUrl && sbKey) msg += " ☁️ クラウド同期も設定したキュン！";
+    var msg = hume ? "✅ APIキーとHume AIキーを保存したキュン♡ 音読練習もできるよ！" : "✅ 設定を保存したキュン♡";
     toast(msg, "success");
-    mascot("APIキーの設定完了キュン♡ 電話の目的を入力して台本を作ろう！");
+    mascot("設定完了キュン♡ 電話の目的を入力して台本を作ろう！");
   });
 
   D.clearBtn.addEventListener("click", function () {
     localStorage.removeItem(LS_KEY);
     localStorage.removeItem(LS_PROV);
     localStorage.removeItem(LS_HUME);
-    localStorage.removeItem(LS_SB_URL);
-    localStorage.removeItem(LS_SB_KEY);
     S.apiKey   = "";
     S.humeKey  = "";
     S.provider = "groq";
-    S.sbUrl    = "";
-    S.sbKey    = "";
-    _sb     = null;
-    _sbUser = null;
+    if (_sb) _sb.auth.signOut().catch(function(){});
+    _sb        = null;
+    _sbUser    = null;
+    _authStep  = "idle";
+    _authEmail = "";
     D.apiKey.value   = "";
     D.humeKey.value  = "";
     D.provider.value = "groq";
-    var sbUrlEl = $("fC_sbUrl"); if (sbUrlEl) sbUrlEl.value = "";
-    var sbKeyEl = $("fC_sbKey"); if (sbKeyEl) sbKeyEl.value = "";
+    updateApiKeyVisibility();
     updateCloudBtn();
     closeModal();
     toast("🗑️ 全キーを削除したキュン♡", "warning");
   });
 
-  D.provider.addEventListener("change", updateProviderHint);
+  D.provider.addEventListener("change", function() {
+    updateProviderHint();
+    updateApiKeyVisibility();
+  });
 
-  $("fC_cloudBtn").addEventListener("click", function() {
-    openModal(false);
-    setTimeout(function() {
-      var el = $("fC_sbUrl");
-      if (el) el.scrollIntoView({ behavior: "smooth", block: "nearest" });
-    }, 180);
+  $("fC_cloudBtn").addEventListener("click", openAuthModal);
+  $("fC_authCloseBtn").addEventListener("click", closeAuthModal);
+  $("fC_authModal").addEventListener("click", function(e) {
+    if (e.target === $("fC_authModal")) closeAuthModal();
   });
 
   /* ── Practice mode ──────────────────────────── */
@@ -2085,7 +2074,10 @@
   });
 
   document.addEventListener("keydown", function (e) {
-    if (e.key === "Escape" && S.modalOpen) closeModal();
+    if (e.key === "Escape") {
+      if (S.modalOpen)    closeModal();
+      if (_authModalOpen) closeAuthModal();
+    }
   });
 
   D.purpose.addEventListener("input", function (e) {
@@ -2103,25 +2095,33 @@
   });
 
   /* ── Supabase Cloud Sync ────────────────────── */
-  function initSupabase(url, key) {
-    if (!url || !key || !window.supabase) return;
-    try {
-      _sb = window.supabase.createClient(url, key);
-      _sb.auth.onAuthStateChange(function(event, session) {
-        _sbUser = session ? session.user : null;
-        updateCloudBtn();
-        renderSbAuthBox();
-        if (_sbUser) syncFromCloud();
-      });
-      _sb.auth.getSession().then(function(res) {
-        _sbUser = (res.data && res.data.session) ? res.data.session.user : null;
-        updateCloudBtn();
-        renderSbAuthBox();
-        if (_sbUser) syncFromCloud();
-      });
-    } catch(e) {
-      console.error("[FujiCall Supabase]", e);
-    }
+  var _authStep      = "idle"; // "idle" | "code_sent"
+  var _authEmail     = "";
+  var _authModalOpen = false;
+
+  function initSupabase() {
+    if (!window.supabase) return;
+    fetch("/api/config")
+      .then(function(r) { return r.json(); })
+      .then(function(cfg) {
+        if (!cfg.supabaseUrl || !cfg.supabaseAnonKey) return;
+        try {
+          _sb = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseAnonKey);
+          _sb.auth.onAuthStateChange(function(event, session) {
+            _sbUser = session ? session.user : null;
+            updateCloudBtn();
+            if (_sbUser) syncFromCloud();
+          });
+          _sb.auth.getSession().then(function(res) {
+            _sbUser = (res.data && res.data.session) ? res.data.session.user : null;
+            updateCloudBtn();
+            if (_sbUser) syncFromCloud();
+          });
+        } catch(e) {
+          console.error("[FujiCall Supabase]", e);
+        }
+      })
+      .catch(function(e) { console.error("[FujiCall config]", e); });
   }
 
   function updateCloudBtn() {
@@ -2129,67 +2129,124 @@
     if (!btn) return;
     btn.classList.remove("fC_cloud-active");
     if (_sb && _sbUser) {
-      btn.title = "同期中: " + _sbUser.email + "（クリックで設定）";
+      btn.title = "同期中: " + _sbUser.email + "（クリックで管理）";
       btn.classList.add("fC_cloud-active");
     } else if (_sb) {
-      btn.title = "クラウド同期: ログインが必要キュン♡（クリックで設定）";
+      btn.title = "クラウド同期: ログインで履歴を引き継ぎ（クリック）";
     } else {
-      btn.title = "クラウド同期（未設定・クリックで設定）";
+      btn.title = "クラウド同期（クリック）";
     }
   }
 
-  function renderSbAuthBox() {
-    var box  = $("fC_sbAuthBox");
-    var wrap = $("fC_sbLoginWrap");
-    if (!box || !wrap) return;
-    if (!_sb) { wrap.style.display = "none"; return; }
-    wrap.style.display = "block";
+  /* ── Auth Modal (OTP) ────────────────────────── */
+  function openAuthModal() {
+    renderAuthModal();
+    $("fC_authModal").classList.add("open");
+    _authModalOpen = true;
+  }
+
+  function closeAuthModal() {
+    $("fC_authModal").classList.remove("open");
+    _authModalOpen = false;
+  }
+
+  function renderAuthModal() {
+    var content = $("fC_authContent");
+    if (!content) return;
+
+    if (!_sb) {
+      content.innerHTML = '<p style="font-size:0.85rem;color:var(--text-muted);text-align:center;padding:1em 0;">クラウド同期を準備中キュン♡<br>少し待ってからもう一度試してね。</p>';
+      return;
+    }
 
     if (_sbUser) {
-      box.innerHTML =
-        '<div style="display:flex;align-items:center;gap:0.5em;flex-wrap:wrap;padding:0.5em 0;">'
-        + '<span style="font-size:0.8rem;color:var(--success);">✅ ログイン中: ' + escHtml(_sbUser.email) + '</span>'
-        + '<button id="fC_sbLogoutBtn" class="fC_btn-danger" style="min-height:34px;font-size:0.76rem;padding:0 0.8em;">ログアウト</button>'
+      content.innerHTML =
+        '<div style="text-align:center;padding:0.5em 0;">'
+        + '<div style="font-size:2.5rem;margin-bottom:0.5em;">☁️</div>'
+        + '<p style="font-size:0.9rem;font-weight:700;color:var(--success);margin-bottom:0.3em;">同期中キュン♡</p>'
+        + '<p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:1.2em;">' + escHtml(_sbUser.email) + '</p>'
+        + '<button id="fC_authLogoutBtn" class="fC_btn-danger" style="width:100%;min-height:44px;">ログアウト</button>'
         + '</div>';
-      var lo = $("fC_sbLogoutBtn");
-      if (lo) lo.addEventListener("click", function() {
+      $("fC_authLogoutBtn").addEventListener("click", function() {
         _sb.auth.signOut().then(function() {
           _sbUser = null;
+          _authStep = "idle";
+          _authEmail = "";
           updateCloudBtn();
-          renderSbAuthBox();
+          renderAuthModal();
           toast("☁️ ログアウトしたキュン♡", "warning");
         });
       });
-    } else {
-      box.innerHTML =
-        '<div>'
-        + '<label class="fC_label" for="fC_sbEmail" style="font-size:0.78rem;margin-bottom:0.3em;display:block;">メールでログイン（マジックリンク）</label>'
-        + '<div style="display:flex;gap:0.4em;">'
-        + '<input type="email" class="fC_input" id="fC_sbEmail" placeholder="you@example.com" autocomplete="email" style="flex:1;min-height:40px;">'
-        + '<button id="fC_sbLoginBtn" class="fC_btn-primary" style="flex:none;padding:0 1em;min-height:40px;font-size:0.82rem;min-width:auto;">送信</button>'
+      return;
+    }
+
+    if (_authStep === "code_sent") {
+      content.innerHTML =
+        '<p style="font-size:0.84rem;color:var(--text-muted);margin-bottom:1em;line-height:1.6;">'
+        + '📧 <strong>' + escHtml(_authEmail) + '</strong> に6桁のコードを送ったキュン♡<br>メールを確認してコードを入力してね！</p>'
+        + '<div class="fC_form-group">'
+        + '<label class="fC_label" for="fC_otpCode">6桁のコード</label>'
+        + '<input type="text" class="fC_input" id="fC_otpCode" placeholder="123456" maxlength="6" pattern="[0-9]{6}" inputmode="numeric" autocomplete="one-time-code" style="text-align:center;font-size:1.4rem;letter-spacing:0.3em;font-weight:700;">'
         + '</div>'
-        + '<p class="fC_provider-hint" style="margin-top:0.3em;">📧 届いたメールのリンクをクリックするとログインできるキュン♡</p>'
-        + '</div>';
-      var lb = $("fC_sbLoginBtn");
-      if (lb) lb.addEventListener("click", function() {
-        var emailEl = $("fC_sbEmail");
-        var email = emailEl ? emailEl.value.trim() : "";
-        if (!email) { toast("📧 メールアドレスを入力してキュン♡", "warning"); return; }
-        lb.disabled = true; lb.textContent = "送信中…";
-        _sb.auth.signInWithOtp({
-          email: email,
-          options: { emailRedirectTo: window.location.href }
-        }).then(function(res) {
+        + '<button class="fC_btn-primary" id="fC_otpVerifyBtn" style="width:100%;min-height:46px;margin-bottom:0.5em;">✅ 確認する</button>'
+        + '<button class="fC_btn-secondary" id="fC_otpResendBtn" style="width:100%;min-height:40px;font-size:0.82rem;">📧 コードを再送信する</button>';
+
+      setTimeout(function() { var el = $("fC_otpCode"); if (el) el.focus(); }, 80);
+
+      $("fC_otpVerifyBtn").addEventListener("click", function() {
+        var code = ($("fC_otpCode") || {}).value || "";
+        if (!/^\d{6}$/.test(code)) { toast("🔢 6桁の数字を入力してキュン♡", "warning"); return; }
+        var btn = $("fC_otpVerifyBtn");
+        btn.disabled = true; btn.textContent = "確認中…";
+        _sb.auth.verifyOtp({ email: _authEmail, token: code, type: "email" })
+          .then(function(res) {
+            if (res.error) throw res.error;
+            toast("✅ ログイン完了キュン♡ 履歴を同期するよ！", "success");
+            closeAuthModal();
+          }).catch(function(e) {
+            toast("❌ コードが違うキュン… もう一度確認してね♡", "error", 5000);
+            btn.disabled = false; btn.textContent = "✅ 確認する";
+          });
+      });
+
+      $("fC_otpResendBtn").addEventListener("click", function() {
+        _authStep = "idle";
+        renderAuthModal();
+      });
+      return;
+    }
+
+    // idle: メールアドレス入力
+    content.innerHTML =
+      '<p style="font-size:0.82rem;color:var(--text-muted);margin-bottom:1em;line-height:1.6;">'
+      + '☁️ メールアドレスを登録すると台本履歴・レベルをどの端末からでも引き継げるキュン♡<br>'
+      + '<small>6桁のコードがメールで届くよ。パスワード不要！</small></p>'
+      + '<div class="fC_form-group">'
+      + '<label class="fC_label" for="fC_authEmail">メールアドレス</label>'
+      + '<input type="email" class="fC_input" id="fC_authEmail" placeholder="you@example.com" autocomplete="email">'
+      + '</div>'
+      + '<button class="fC_btn-primary" id="fC_authSendBtn" style="width:100%;min-height:46px;">📧 コードを送る</button>'
+      + '<p style="font-size:0.73rem;color:var(--text-muted);margin-top:0.6em;text-align:center;">登録しなくてもアプリは使えるキュン♡（履歴はこの端末のみ）</p>';
+
+    setTimeout(function() { var el = $("fC_authEmail"); if (el) el.focus(); }, 80);
+
+    $("fC_authSendBtn").addEventListener("click", function() {
+      var email = ($("fC_authEmail") || {}).value || "";
+      if (!email || !/\S+@\S+\.\S+/.test(email)) { toast("📧 メールアドレスを入力してキュン♡", "warning"); return; }
+      var btn = $("fC_authSendBtn");
+      btn.disabled = true; btn.textContent = "送信中…";
+      _sb.auth.signInWithOtp({ email: email, options: { shouldCreateUser: true } })
+        .then(function(res) {
           if (res.error) throw res.error;
-          toast("📧 マジックリンクを送ったキュン♡ メールを確認してね！", "success", 7000);
-          if (emailEl) emailEl.value = "";
+          _authEmail = email;
+          _authStep  = "code_sent";
+          renderAuthModal();
+          toast("📧 コードを送ったキュン♡ メールを確認してね！", "success", 7000);
         }).catch(function(e) {
           toast("😵 送信失敗キュン… " + (e.message || ""), "error");
-        }).finally(function() {
-          lb.disabled = false; lb.textContent = "送信";
+          btn.disabled = false; btn.textContent = "📧 コードを送る";
         });
-      });
-    }
+    });
   }
 
   async function syncFromCloud() {
@@ -2252,8 +2309,12 @@
     renderHistory();
     renderGrowth();
     updateCloudBtn();
-    if (S.sbUrl && S.sbKey) initSupabase(S.sbUrl, S.sbKey);
-    // Groq（デフォルト）はキー不要でそのまま動作する
+    initSupabase();
+    // Groqキーが残っていれば削除（サーバープロキシに移行済み）
+    if (S.provider === "groq" && S.apiKey) {
+      S.apiKey = "";
+      localStorage.removeItem(LS_KEY);
+    }
     if (!S.apiKey && S.provider !== "groq") {
       setTimeout(function () { openModal(true); }, 700);
       mascot("はじめまして！ふじキュン♡だよ♡ GeminiやOpenAIを使う場合はAPIキーを設定してね！");
