@@ -9,7 +9,7 @@
                  script-src 'self' 'unsafe-inline' https://vercel.live https://cdn.jsdelivr.net;
                  style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
                  font-src https://fonts.gstatic.com data:;
-                 connect-src 'self' https://generativelanguage.googleapis.com https://api.openai.com https://api.groq.com https://api.hume.ai https://vercel.live https://*.supabase.co;
+                 connect-src 'self' https://generativelanguage.googleapis.com https://api.openai.com https://api.groq.com https://vercel.live https://*.supabase.co;
                  img-src 'self' data:;
                  frame-src https://vercel.live;">
   <title>電話かけ出しサポート♡ | ふじキュン</title>
@@ -993,15 +993,6 @@
              autocomplete="off" spellcheck="false">
     </div>
     </div>
-    <div class="fC_form-group">
-      <label class="fC_label" for="fC_humeKey">
-        🎤 Hume AI APIキー <span style="color:var(--text-muted);font-weight:400;">（音読練習用・任意）</span>
-      </label>
-      <input type="password" class="fC_input" id="fC_humeKey"
-             placeholder="Hume AIのAPIキーを入力（任意）"
-             autocomplete="off" spellcheck="false">
-      <p class="fC_provider-hint">🎙 入力すると音読練習で声の感情・抑揚を分析できるキュン♡ <a href="https://platform.hume.ai" target="_blank" rel="noopener noreferrer">platform.hume.ai</a> で無料取得</p>
-    </div>
     <div class="fC_modal-actions">
       <button class="fC_btn-secondary" id="fC_cancelBtn">キャンセル</button>
       <button class="fC_btn-danger"    id="fC_clearBtn">🗑️ 削除</button>
@@ -1033,7 +1024,7 @@
   const LS_PROV   = "fujiCall_provider";
   const LS_HIST   = "fujiCall_history";
   const LS_STATS  = "fujiCall_stats";
-  const LS_HUME   = "fujiCall_humeKey";
+  var _humeEnabled = false;
 
   var _sb     = null;
   var _sbUser = null;
@@ -1234,7 +1225,6 @@
   /* ── State ─────────────────────────────────── */
   const S = {
     apiKey:     "",
-    humeKey:    "",
     provider:   "groq",
     callerType: "external",
     keigoLevel: "standard",
@@ -1266,7 +1256,6 @@
     provider:  $("fC_provider"),
     provHint:  $("fC_providerHint"),
     apiKey:      $("fC_apiKey"),
-    humeKey:     $("fC_humeKey"),
     saveBtn:     $("fC_saveBtn"),
     cancelBtn:   $("fC_cancelBtn"),
     clearBtn:    $("fC_clearBtn"),
@@ -1298,21 +1287,17 @@
 
   /* ── Storage ────────────────────────────────── */
   function loadStorage() {
-    S.apiKey   = localStorage.getItem(LS_KEY)    || "";
-    S.humeKey  = localStorage.getItem(LS_HUME)   || "";
-    S.provider = localStorage.getItem(LS_PROV)   || "groq";
+    S.apiKey   = localStorage.getItem(LS_KEY)  || "";
+    S.provider = localStorage.getItem(LS_PROV) || "groq";
     try { S.history = JSON.parse(localStorage.getItem(LS_HIST) || "[]"); }
     catch (_) { S.history = []; }
   }
 
-  function saveKey(key, provider, humeKey) {
+  function saveKey(key, provider) {
     S.apiKey   = key;
     S.provider = provider;
-    S.humeKey  = humeKey || "";
     localStorage.setItem(LS_KEY,  key);
     localStorage.setItem(LS_PROV, provider);
-    if (humeKey) localStorage.setItem(LS_HUME, humeKey);
-    else         localStorage.removeItem(LS_HUME);
   }
 
   function addHistory(entry) {
@@ -1691,16 +1676,13 @@
 
   function openModal(isFirst) {
     D.apiKey.value   = S.apiKey;
-    D.humeKey.value  = S.humeKey;
     D.provider.value = S.provider;
     updateProviderHint();
     updateApiKeyVisibility();
     D.cancelBtn.style.visibility = isFirst ? "hidden" : "visible";
     D.modal.classList.add("open");
     S.modalOpen = true;
-    setTimeout(function () {
-      (D.provider.value === "groq" ? D.humeKey : D.apiKey).focus();
-    }, 120);
+    setTimeout(function () { D.apiKey.focus(); }, 120);
   }
 
   function closeModal() {
@@ -1759,25 +1741,22 @@
   D.cancelBtn.addEventListener("click",  closeModal);
 
   D.saveBtn.addEventListener("click", function () {
-    var key  = D.apiKey.value.trim();
-    var hume = D.humeKey.value.trim();
+    var key = D.apiKey.value.trim();
     if (D.provider.value !== "groq" && !key) {
       toast("🔑 APIキーを入力してね♡", "warning"); return;
     }
-    saveKey(key, D.provider.value, hume);
+    saveKey(key, D.provider.value);
     if (S.demoMode) exitDemoMode();
     closeModal();
-    var msg = hume ? "✅ APIキーとHume AIキーを保存したキュン♡ 音読練習もできるよ！" : "✅ 設定を保存したキュン♡";
-    toast(msg, "success");
+    toast("✅ 設定を保存したキュン♡", "success");
     mascot("設定完了キュン♡ 電話の目的を入力して台本を作ろう！");
   });
 
   D.clearBtn.addEventListener("click", function () {
     localStorage.removeItem(LS_KEY);
     localStorage.removeItem(LS_PROV);
-    localStorage.removeItem(LS_HUME);
+    localStorage.removeItem("fujiCall_humeKey"); // 旧キーの移行削除
     S.apiKey   = "";
-    S.humeKey  = "";
     S.provider = "groq";
     if (_sb) _sb.auth.signOut().catch(function(){});
     _sb        = null;
@@ -1785,7 +1764,6 @@
     _authStep  = "idle";
     _authEmail = "";
     D.apiKey.value   = "";
-    D.humeKey.value  = "";
     D.provider.value = "groq";
     updateApiKeyVisibility();
     updateCloudBtn();
@@ -1862,7 +1840,7 @@
     var p1 = (S.provider === "groq")
       ? transcribeWithWhisper(blob)
       : Promise.resolve("");
-    var p2 = S.humeKey
+    var p2 = _humeEnabled
       ? analyzeWithHume(blob)
       : Promise.resolve(null);
 
@@ -1909,18 +1887,25 @@
   }
 
   function analyzeWithHume(blob) {
-    var fd = new FormData();
-    fd.append("json", JSON.stringify({ models: { prosody: {} } }));
-    fd.append("file", blob, "rec.webm");
-    return fetch("https://api.hume.ai/v0/batch/jobs", {
-      method: "POST",
-      headers: { "X-Hume-Api-Key": S.humeKey },
-      body: fd,
-    }).then(function(r) { return r.json(); })
-      .then(function(d) {
-        if (!d.job_id) throw new Error("No job_id from Hume");
-        return pollHumeJob(d.job_id);
-      });
+    return new Promise(function(resolve, reject) {
+      var reader = new FileReader();
+      reader.onload = function() {
+        var base64 = reader.result.split(",")[1];
+        fetch("/api/hume-submit", {
+          method:  "POST",
+          headers: { "Content-Type": "application/json" },
+          body:    JSON.stringify({ audio: base64, mimeType: blob.type }),
+        }).then(function(r) { return r.json(); })
+          .then(function(d) {
+            if (d.error || !d.jobId) throw new Error(d.error || "No jobId");
+            return pollHumeJob(d.jobId);
+          })
+          .then(resolve)
+          .catch(reject);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
   }
 
   function pollHumeJob(jobId) {
@@ -1928,19 +1913,16 @@
       var tries = 0;
       var timer = setInterval(function() {
         if (++tries > 30) { clearInterval(timer); reject(new Error("Hume timeout")); return; }
-        fetch("https://api.hume.ai/v0/batch/jobs/" + jobId, {
-          headers: { "X-Hume-Api-Key": S.humeKey },
-        }).then(function(r) { return r.json(); })
+        fetch("/api/hume-status?jobId=" + encodeURIComponent(jobId))
+          .then(function(r) { return r.json(); })
           .then(function(d) {
-            var status = d.state && d.state.status;
-            if (status === "COMPLETED") {
+            if (d.status === "COMPLETED") {
               clearInterval(timer);
-              fetch("https://api.hume.ai/v0/batch/jobs/" + jobId + "/predictions", {
-                headers: { "X-Hume-Api-Key": S.humeKey },
-              }).then(function(r) { return r.json(); })
+              fetch("/api/hume-predictions?jobId=" + encodeURIComponent(jobId))
+                .then(function(r) { return r.json(); })
                 .then(function(preds) { resolve(extractHumeScores(preds)); })
                 .catch(reject);
-            } else if (status === "FAILED") {
+            } else if (d.status === "FAILED") {
               clearInterval(timer); reject(new Error("Hume job failed"));
             }
           }).catch(function() {});
@@ -2100,11 +2082,11 @@
   var _authModalOpen = false;
 
   function initSupabase() {
-    if (!window.supabase) return;
     fetch("/api/config")
       .then(function(r) { return r.json(); })
       .then(function(cfg) {
-        if (!cfg.supabaseUrl || !cfg.supabaseAnonKey) return;
+        _humeEnabled = !!cfg.hasHumeKey;
+        if (!cfg.supabaseUrl || !cfg.supabaseAnonKey || !window.supabase) return;
         try {
           _sb = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseAnonKey);
           _sb.auth.onAuthStateChange(function(event, session) {

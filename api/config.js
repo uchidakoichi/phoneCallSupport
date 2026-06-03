@@ -6,5 +6,6 @@ module.exports = function handler(req, res) {
   return res.status(200).json({
     supabaseUrl:     supabaseUrl     || null,
     supabaseAnonKey: supabaseAnonKey || null,
+    hasHumeKey:      !!process.env.HUME_API_KEY,
   });
 };
