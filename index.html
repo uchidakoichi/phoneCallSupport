@@ -9,7 +9,7 @@
                  script-src 'self' 'unsafe-inline' https://vercel.live https://cdn.jsdelivr.net;
                  style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
                  font-src https://fonts.gstatic.com data:;
-                 connect-src 'self' https://generativelanguage.googleapis.com https://api.openai.com https://api.groq.com https://vercel.live https://*.supabase.co;
+                 connect-src 'self' https://generativelanguage.googleapis.com https://vercel.live https://*.supabase.co;
                  img-src 'self' data:;
                  frame-src https://vercel.live;">
   <title>電話かけ出しサポート♡ | ふじキュン</title>
@@ -810,8 +810,7 @@
     <span aria-hidden="true">📞</span>
     電話かけ出しサポート<span class="fC_ver">v2.0.0</span>
   </div>
-  <button id="fC_cloudBtn"   class="fC_icon-btn" aria-label="クラウド同期" title="クラウド同期（未設定）" style="font-size:1rem;">☁️</button>
-  <button id="fC_settingsBtn" class="fC_icon-btn" aria-label="APIキー設定を開く" title="設定">⚙️</button>
+  <button id="fC_cloudBtn" class="fC_icon-btn" aria-label="クラウド同期" title="クラウド同期" style="font-size:1rem;">☁️</button>
 </header>
 
 <main role="main" id="fC_main">
@@ -879,6 +878,7 @@
       <button class="fC_chip" data-action="template" data-text="書類・資料の送付について確認したい">📄 書類確認</button>
       <button class="fC_chip" data-action="template" data-text="お問い合わせへの折り返し連絡">📲 折り返し</button>
       <button class="fC_chip" data-action="template" data-text="欠席・欠勤の連絡をしたい">😔 欠席連絡</button>
+      <button class="fC_chip" id="fC_demoChip" style="background:rgba(124,77,237,0.1);border-color:rgba(124,77,237,0.35);color:#7c3aed;">🎮 デモ</button>
     </div>
   </div>
 
@@ -956,50 +956,6 @@
   ふじキュン♡ と一緒に、電話の不安をなくそうキュンね♡ &nbsp;|&nbsp; v2.0.0
 </footer>
 
-<!-- Settings modal -->
-<div class="fC_overlay" id="fC_modal" role="dialog" aria-modal="true" aria-labelledby="fC_modalTitle">
-  <div class="fC_modal">
-    <h2 class="fC_modal-title" id="fC_modalTitle">
-      <span aria-hidden="true">⚙️</span> APIキーの設定キュン♡
-    </h2>
-    <p class="fC_modal-desc">
-      <strong>Groq</strong>はAPIキー不要でそのまま使えるキュン♡（サーバーで管理してるよ！）<br>
-      GeminiやOpenAIを使いたい場合のみ、下にAPIキーを入力してね。<br>
-      入力したキーはあなたのブラウザだけに保存されて、外に出ないから安心してね！
-    </p>
-
-    <!-- Demo mode option -->
-    <div class="fC_demo-section">
-      <p>🎮 APIキーがなくても<strong>デモモード</strong>で動作を確認できるキュン♡<br>サンプル台本でアプリの使い方を試してみてね！</p>
-      <button class="fC_btn-demo" id="fC_demoModeBtn">🎮 デモモードで試してみる♡（APIキー不要）</button>
-    </div>
-
-    <div class="fC_form-group">
-      <label class="fC_label" for="fC_provider">AIプロバイダー</label>
-      <select class="fC_select" id="fC_provider" aria-describedby="fC_providerHint">
-        <option value="groq">🚀 Groq（APIキー不要・おすすめキュン♡）</option>
-        <option value="gemini">✨ Google Gemini</option>
-        <option value="openai">💬 OpenAI（ChatGPT系）</option>
-      </select>
-      <p class="fC_provider-hint" id="fC_providerHint"></p>
-    </div>
-    <div id="fC_apiKeyWrap">
-    <div class="fC_form-group">
-      <label class="fC_label" for="fC_apiKey">
-        APIキー <span style="color:var(--error)" aria-hidden="true">*</span>
-      </label>
-      <input type="password" class="fC_input" id="fC_apiKey"
-             placeholder="AIzaSy...（Gemini）/ sk-...（OpenAI）"
-             autocomplete="off" spellcheck="false">
-    </div>
-    </div>
-    <div class="fC_modal-actions">
-      <button class="fC_btn-secondary" id="fC_cancelBtn">キャンセル</button>
-      <button class="fC_btn-danger"    id="fC_clearBtn">🗑️ 削除</button>
-      <button class="fC_btn-primary"   id="fC_saveBtn">✅ 保存してね♡</button>
-    </div>
-  </div>
-</div>
 
 <!-- Auth modal (Cloud sync / OTP) -->
 <div class="fC_overlay" id="fC_authModal" role="dialog" aria-modal="true" aria-labelledby="fC_authModalTitle">
@@ -1020,8 +976,6 @@
   "use strict";
 
   const VERSION   = "v2.0.0";
-  const LS_KEY    = "fujiCall_apiKey";
-  const LS_PROV   = "fujiCall_provider";
   const LS_HIST   = "fujiCall_history";
   const LS_STATS  = "fujiCall_stats";
   var _humeEnabled = false;
@@ -1224,15 +1178,12 @@
 
   /* ── State ─────────────────────────────────── */
   const S = {
-    apiKey:     "",
-    provider:   "groq",
     callerType: "external",
     keigoLevel: "standard",
     purpose:    "",
     isLoading:  false,
     script:     "",
     history:    [],
-    modalOpen:  false,
     demoMode:   false,
   };
 
@@ -1252,15 +1203,7 @@
     regenBtn:  $("fC_regenBtn"),
     history:   $("fC_history"),
     histList:  $("fC_histList"),
-    modal:     $("fC_modal"),
-    provider:  $("fC_provider"),
-    provHint:  $("fC_providerHint"),
-    apiKey:      $("fC_apiKey"),
-    saveBtn:     $("fC_saveBtn"),
-    cancelBtn:   $("fC_cancelBtn"),
-    clearBtn:    $("fC_clearBtn"),
-    toasts:      $("fC_toasts"),
-    settings:    $("fC_settingsBtn"),
+    toasts:    $("fC_toasts"),
     practiceBtn: $("fC_practiceBtn"),
     practice:    $("fC_practice"),
     recBtn:      $("fC_recBtn"),
@@ -1287,17 +1230,8 @@
 
   /* ── Storage ────────────────────────────────── */
   function loadStorage() {
-    S.apiKey   = localStorage.getItem(LS_KEY)  || "";
-    S.provider = localStorage.getItem(LS_PROV) || "groq";
     try { S.history = JSON.parse(localStorage.getItem(LS_HIST) || "[]"); }
     catch (_) { S.history = []; }
-  }
-
-  function saveKey(key, provider) {
-    S.apiKey   = key;
-    S.provider = provider;
-    localStorage.setItem(LS_KEY,  key);
-    localStorage.setItem(LS_PROV, provider);
   }
 
   function addHistory(entry) {
@@ -1369,108 +1303,6 @@
   }
 
   /* ── API calls ──────────────────────────────── */
-  function callGemini(key, prompt) {
-    var url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key="
-              + encodeURIComponent(key);
-    return fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.72, maxOutputTokens: 800 },
-      }),
-    }).then(function (res) {
-      if (!res.ok) {
-        return res.json().catch(function () { return {}; }).then(function (err) {
-          var code = (err.error && err.error.code) || res.status;
-          var msg  = (err.error && err.error.message) || "";
-          console.error("[Gemini API Error] code:", code, "message:", msg, "full:", JSON.stringify(err));
-          if (code === 400 && msg.indexOf("API_KEY") >= 0) throw new Error("INVALID_KEY");
-          if (code === 429 || res.status === 429) throw new Error("RATE_LIMIT:" + msg);
-          throw new Error("API_ERROR:" + code);
-        });
-      }
-      return res.json();
-    }).then(function (data) {
-      var text = data &&
-                 data.candidates &&
-                 data.candidates[0] &&
-                 data.candidates[0].content &&
-                 data.candidates[0].content.parts &&
-                 data.candidates[0].content.parts[0] &&
-                 data.candidates[0].content.parts[0].text;
-      if (!text) throw new Error("EMPTY_RESPONSE");
-      return text;
-    });
-  }
-
-  function callGroq(key, prompt) {
-    return fetch("https://api.groq.com/openai/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": "Bearer " + key,
-      },
-      body: JSON.stringify({
-        model: "llama-3.3-70b-versatile",
-        messages: [{ role: "user", content: prompt }],
-        max_tokens: 800,
-        temperature: 0.72,
-      }),
-    }).then(function (res) {
-      if (!res.ok) {
-        return res.json().catch(function () { return {}; }).then(function (err) {
-          console.error("[Groq API Error]", JSON.stringify(err));
-          if (res.status === 401) throw new Error("INVALID_KEY");
-          if (res.status === 429) throw new Error("RATE_LIMIT");
-          throw new Error("API_ERROR:" + res.status);
-        });
-      }
-      return res.json();
-    }).then(function (data) {
-      var text = data &&
-                 data.choices &&
-                 data.choices[0] &&
-                 data.choices[0].message &&
-                 data.choices[0].message.content;
-      if (!text) throw new Error("EMPTY_RESPONSE");
-      return text;
-    });
-  }
-
-  function callOpenAI(key, prompt) {
-    return fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": "Bearer " + key,
-      },
-      body: JSON.stringify({
-        model: "gpt-3.5-turbo",
-        messages: [{ role: "user", content: prompt }],
-        max_tokens: 800,
-        temperature: 0.72,
-      }),
-    }).then(function (res) {
-      if (!res.ok) {
-        return res.json().catch(function () { return {}; }).then(function (err) {
-          if (res.status === 401) throw new Error("INVALID_KEY");
-          if (res.status === 429) throw new Error("RATE_LIMIT");
-          throw new Error("API_ERROR:" + res.status);
-        });
-      }
-      return res.json();
-    }).then(function (data) {
-      var text = data &&
-                 data.choices &&
-                 data.choices[0] &&
-                 data.choices[0].message &&
-                 data.choices[0].message.content;
-      if (!text) throw new Error("EMPTY_RESPONSE");
-      return text;
-    });
-  }
-
   function callGroqProxy(prompt) {
     return fetch("/api/generate", {
       method: "POST",
@@ -1490,10 +1322,6 @@
   }
 
   function callAPI(prompt) {
-    if (S.provider === "openai") return callOpenAI(S.apiKey, prompt);
-    if (S.provider === "gemini") return callGemini(S.apiKey, prompt);
-    // Groq: 個人キーがあれば直接呼び出し、なければサーバープロキシ
-    if (S.apiKey) return callGroq(S.apiKey, prompt);
     return callGroqProxy(prompt);
   }
 
@@ -1524,12 +1352,6 @@
 
   /* ── Generate ───────────────────────────────── */
   function generate() {
-    // Groq はプロキシで動作するためキー不要。Gemini/OpenAI はキーが必要
-    if (!S.demoMode && S.provider !== "groq" && !S.apiKey) {
-      openModal(true);
-      toast("💡 GeminiやOpenAIはAPIキーが必要だキュン♡ Groqはキー不要だよ！", "warning");
-      return;
-    }
     if (!S.purpose.trim()) {
       toast("📝 電話の目的を入力してね♡", "warning");
       D.purpose.focus();
@@ -1659,36 +1481,7 @@
   }
 
   /* ── Modal ──────────────────────────────────── */
-  function updateProviderHint() {
-    var hints = {
-      groq:   "🚀 GroqはAPIキー不要キュン♡ サーバー側で管理しているのでそのまま使えるよ！",
-      gemini: "🌟 Google AI Studioで取得できます（日本ではプリペイド課金が必要キュン）",
-      openai: "💳 OpenAIの従量課金APIキーです。クレジット購入が必要キュン",
-    };
-    D.provHint.textContent = hints[D.provider.value] || "";
-  }
 
-  function updateApiKeyVisibility() {
-    var wrap = $("fC_apiKeyWrap");
-    if (!wrap) return;
-    wrap.style.display = D.provider.value === "groq" ? "none" : "";
-  }
-
-  function openModal(isFirst) {
-    D.apiKey.value   = S.apiKey;
-    D.provider.value = S.provider;
-    updateProviderHint();
-    updateApiKeyVisibility();
-    D.cancelBtn.style.visibility = isFirst ? "hidden" : "visible";
-    D.modal.classList.add("open");
-    S.modalOpen = true;
-    setTimeout(function () { D.apiKey.focus(); }, 120);
-  }
-
-  function closeModal() {
-    D.modal.classList.remove("open");
-    S.modalOpen = false;
-  }
 
   /* ── Event delegation ───────────────────────── */
   document.addEventListener("click", function (e) {
@@ -1733,48 +1526,12 @@
     }
   });
 
-  D.genBtn.addEventListener("click",     generate);
-  D.regenBtn.addEventListener("click",   generate);
-  D.copyBtn.addEventListener("click",    copyScript);
-  D.printBtn.addEventListener("click",   function () { window.print(); });
-  D.settings.addEventListener("click",  function () { openModal(false); });
-  D.cancelBtn.addEventListener("click",  closeModal);
+  D.genBtn.addEventListener("click",   generate);
+  D.regenBtn.addEventListener("click", generate);
+  D.copyBtn.addEventListener("click",  copyScript);
+  D.printBtn.addEventListener("click", function () { window.print(); });
 
-  D.saveBtn.addEventListener("click", function () {
-    var key = D.apiKey.value.trim();
-    if (D.provider.value !== "groq" && !key) {
-      toast("🔑 APIキーを入力してね♡", "warning"); return;
-    }
-    saveKey(key, D.provider.value);
-    if (S.demoMode) exitDemoMode();
-    closeModal();
-    toast("✅ 設定を保存したキュン♡", "success");
-    mascot("設定完了キュン♡ 電話の目的を入力して台本を作ろう！");
-  });
-
-  D.clearBtn.addEventListener("click", function () {
-    localStorage.removeItem(LS_KEY);
-    localStorage.removeItem(LS_PROV);
-    localStorage.removeItem("fujiCall_humeKey"); // 旧キーの移行削除
-    S.apiKey   = "";
-    S.provider = "groq";
-    if (_sb) _sb.auth.signOut().catch(function(){});
-    _sb        = null;
-    _sbUser    = null;
-    _authStep  = "idle";
-    _authEmail = "";
-    D.apiKey.value   = "";
-    D.provider.value = "groq";
-    updateApiKeyVisibility();
-    updateCloudBtn();
-    closeModal();
-    toast("🗑️ 全キーを削除したキュン♡", "warning");
-  });
-
-  D.provider.addEventListener("change", function() {
-    updateProviderHint();
-    updateApiKeyVisibility();
-  });
+  $("fC_demoChip").addEventListener("click", enterDemoMode);
 
   $("fC_cloudBtn").addEventListener("click", openAuthModal);
   $("fC_authCloseBtn").addEventListener("click", closeAuthModal);
@@ -1836,10 +1593,7 @@
   }
 
   function analyzeRecording(blob) {
-    // Groqプロバイダーであれば個人キーの有無によらずWhisper文字起こし可能
-    var p1 = (S.provider === "groq")
-      ? transcribeWithWhisper(blob)
-      : Promise.resolve("");
+    var p1 = transcribeWithWhisper(blob);
     var p2 = _humeEnabled
       ? analyzeWithHume(blob)
       : Promise.resolve(null);
@@ -1855,20 +1609,6 @@
   }
 
   function transcribeWithWhisper(blob) {
-    if (S.apiKey) {
-      // 個人キーがある場合は直接呼び出し
-      var fd = new FormData();
-      fd.append("file", blob, "rec.webm");
-      fd.append("model", "whisper-large-v3");
-      fd.append("language", "ja");
-      return fetch("https://api.groq.com/openai/v1/audio/transcriptions", {
-        method: "POST",
-        headers: { "Authorization": "Bearer " + S.apiKey },
-        body: fd,
-      }).then(function(r) { return r.json(); })
-        .then(function(d) { return d.text || ""; });
-    }
-    // キーなし: base64 に変換してサーバープロキシ経由
     return new Promise(function(resolve, reject) {
       var reader = new FileReader();
       reader.onload = function() {
@@ -1982,9 +1722,7 @@
         : "（音声分析なし・Whisperのみ）",
     ].join("\n");
 
-    var feedbackCall = S.apiKey
-      ? callGroq(S.apiKey, feedbackPrompt)
-      : callGroqProxy(feedbackPrompt);
+    var feedbackCall = callGroqProxy(feedbackPrompt);
     feedbackCall.then(function(feedback) {
       showPracticeResult(transcript, scores, feedback);
       mascot(feedback.replace(/\n/g, " ").slice(0, 60) + "♡");
@@ -2045,21 +1783,14 @@
   D.pracClose.addEventListener("click",   function() { D.practice.classList.remove("visible"); });
   D.recBtn.addEventListener("click",      toggleRecording);
 
-  $("fC_demoModeBtn").addEventListener("click", enterDemoMode);
-  $("fC_demoBannerClose").addEventListener("click", function() {
-    exitDemoMode();
-    openModal(true);
-  });
+  $("fC_demoBannerClose").addEventListener("click", exitDemoMode);
 
   D.modal.addEventListener("click", function (e) {
     if (e.target === D.modal) closeModal();
   });
 
   document.addEventListener("keydown", function (e) {
-    if (e.key === "Escape") {
-      if (S.modalOpen)    closeModal();
-      if (_authModalOpen) closeAuthModal();
-    }
+    if (e.key === "Escape" && _authModalOpen) closeAuthModal();
   });
 
   D.purpose.addEventListener("input", function (e) {
@@ -2287,26 +2018,20 @@
 
   /* ── Init ───────────────────────────────────── */
   function init() {
+    // 旧バージョンのlocalStorageキーを削除
+    localStorage.removeItem("fujiCall_apiKey");
+    localStorage.removeItem("fujiCall_provider");
+    localStorage.removeItem("fujiCall_humeKey");
     loadStorage();
     renderHistory();
     renderGrowth();
     updateCloudBtn();
     initSupabase();
-    // Groqキーが残っていれば削除（サーバープロキシに移行済み）
-    if (S.provider === "groq" && S.apiKey) {
-      S.apiKey = "";
-      localStorage.removeItem(LS_KEY);
-    }
-    if (!S.apiKey && S.provider !== "groq") {
-      setTimeout(function () { openModal(true); }, 700);
-      mascot("はじめまして！ふじキュン♡だよ♡ GeminiやOpenAIを使う場合はAPIキーを設定してね！");
-    } else {
-      var st = loadStats();
-      var lv = getLevel(st.total);
-      mascot(st.total === 0
-        ? "やあ！ふじキュン♡だキュンよ♡ 電話前の緊張、一緒に解消しようね！通話相手と目的を教えてくれれば台本を作るキュン♡"
-        : lv.avatar + " " + lv.name + "のあなた！今日も一緒に頑張るキュン♡");
-    }
+    var st = loadStats();
+    var lv = getLevel(st.total);
+    mascot(st.total === 0
+      ? "やあ！ふじキュン♡だキュンよ♡ 電話前の緊張、一緒に解消しようね！通話相手と目的を教えてくれれば台本を作るキュン♡"
+      : lv.avatar + " " + lv.name + "のあなた！今日も一緒に頑張るキュン♡");
   }
 
   init();
