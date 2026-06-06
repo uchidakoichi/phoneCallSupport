@@ -9,7 +9,7 @@
                  script-src 'self' 'unsafe-inline' https://vercel.live https://cdn.jsdelivr.net;
                  style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
                  font-src https://fonts.gstatic.com data:;
-                 connect-src 'self' https://generativelanguage.googleapis.com https://vercel.live https://*.supabase.co;
+                 connect-src 'self' https://generativelanguage.googleapis.com https://vercel.live https://*.supabase.co https://cdn.jsdelivr.net;
                  img-src 'self' data:;
                  frame-src https://vercel.live;">
   <title>電話かけ出しサポート♡ | ふじキュン</title>
@@ -1784,10 +1784,6 @@
   D.recBtn.addEventListener("click",      toggleRecording);
 
   $("fC_demoBannerClose").addEventListener("click", exitDemoMode);
-
-  D.modal.addEventListener("click", function (e) {
-    if (e.target === D.modal) closeModal();
-  });
 
   document.addEventListener("keydown", function (e) {
     if (e.key === "Escape" && _authModalOpen) closeAuthModal();
