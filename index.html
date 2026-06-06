@@ -873,12 +873,11 @@
       <span class="fC_char-count" id="fC_charCount" aria-live="polite">0/300</span>
     </div>
     <div class="fC_templates" role="group" aria-label="よく使うテンプレート">
-      <button class="fC_chip" data-action="template" data-text="来週の打ち合わせ日程を確認したい">📅 日程確認</button>
-      <button class="fC_chip" data-action="template" data-text="担当者に取り次いでもらいたい">🔀 取り次ぎ</button>
-      <button class="fC_chip" data-action="template" data-text="書類・資料の送付について確認したい">📄 書類確認</button>
-      <button class="fC_chip" data-action="template" data-text="お問い合わせへの折り返し連絡">📲 折り返し</button>
-      <button class="fC_chip" data-action="template" data-text="欠席・欠勤の連絡をしたい">😔 欠席連絡</button>
-      <button class="fC_chip" id="fC_demoChip" style="background:rgba(124,77,237,0.1);border-color:rgba(124,77,237,0.35);color:#7c3aed;">🎮 デモ</button>
+      <button class="fC_chip" data-action="template" data-text="こちらのミスでご迷惑をおかけしてしまい、お詫びとご報告をしたい">🙇 ミスの謝罪</button>
+      <button class="fC_chip" data-action="template" data-text="追加の業務・作業をお願いしたい">📋 業務依頼</button>
+      <button class="fC_chip" data-action="template" data-text="いただいたご依頼・提案をお断りしたい">🚫 お断り</button>
+      <button class="fC_chip" data-action="template" data-text="お支払いや提出物の期限が過ぎており、確認と催促をしたい">⏰ 督促</button>
+      <button class="fC_chip" data-action="template" data-text="お客様からのクレーム・ご指摘について謝罪と説明をしたい">⚡ クレーム対応</button>
     </div>
   </div>
 
@@ -1530,8 +1529,6 @@
   D.regenBtn.addEventListener("click", generate);
   D.copyBtn.addEventListener("click",  copyScript);
   D.printBtn.addEventListener("click", function () { window.print(); });
-
-  $("fC_demoChip").addEventListener("click", enterDemoMode);
 
   $("fC_cloudBtn").addEventListener("click", openAuthModal);
   $("fC_authCloseBtn").addEventListener("click", closeAuthModal);
