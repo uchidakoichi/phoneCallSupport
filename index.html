@@ -146,180 +146,6 @@
       gap: 0.3em;
     }
 
-    /* ── Toggle (caller type) ── */
-    .fC_toggle-wrap {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 0.45em;
-      background: var(--primary-light);
-      border-radius: 10px;
-      padding: 4px;
-    }
-    .fC_toggle-btn {
-      min-height: 56px !important;
-      border: none;
-      background: transparent;
-      border-radius: 8px;
-      font-family: inherit;
-      font-size: 0.88rem;
-      font-weight: 500;
-      cursor: pointer;
-      padding: 0.55em 0.5em;
-      transition: all var(--trans);
-      color: var(--text-muted);
-      -webkit-tap-highlight-color: transparent;
-      line-height: 1.4;
-    }
-    .fC_toggle-btn[aria-pressed="true"] {
-      background: var(--primary);
-      color: #fff;
-      box-shadow: 0 2px 10px rgba(0,151,167,0.35);
-    }
-    @media (hover: hover) {
-      .fC_toggle-btn:not([aria-pressed="true"]):hover {
-        background: rgba(0,151,167,0.12);
-        color: var(--primary);
-      }
-    }
-
-    /* ── Keigo buttons ── */
-    .fC_keigo-wrap {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 0.45em;
-    }
-    .fC_keigo-btn {
-      min-height: 66px !important;
-      border: 2px solid var(--border);
-      background: transparent;
-      border-radius: 10px;
-      font-family: inherit;
-      cursor: pointer;
-      padding: 0.5em 0.25em;
-      transition: all var(--trans);
-      color: var(--text-muted);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 0.15em;
-      -webkit-tap-highlight-color: transparent;
-    }
-    .fC_keigo-btn .ki { font-size: 1.35rem; }
-    .fC_keigo-btn .kl { font-size: 0.75rem; font-weight: 700; }
-    .fC_keigo-btn .kd { font-size: 0.63rem; opacity: 0.72; }
-    .fC_keigo-btn[aria-pressed="true"] {
-      border-color: var(--primary);
-      background: var(--primary-light);
-      color: var(--primary);
-    }
-    @media (hover: hover) {
-      .fC_keigo-btn:not([aria-pressed="true"]):hover {
-        border-color: var(--primary);
-        background: var(--primary-light);
-        color: var(--primary);
-      }
-    }
-
-    /* ── Textarea ── */
-    .fC_ta-wrap { position: relative; }
-    .fC_textarea {
-      width: 100%;
-      min-height: 96px;
-      border: 2px solid var(--border);
-      border-radius: 10px;
-      padding: 0.7em 0.75em 1.8em;
-      font-family: inherit;
-      font-size: 0.94rem;
-      line-height: 1.55;
-      resize: vertical;
-      transition: border-color var(--trans);
-      background: #fff;
-      color: var(--text);
-    }
-    .fC_textarea:focus {
-      outline: none;
-      border-color: var(--primary);
-      box-shadow: 0 0 0 3px rgba(0,151,167,0.1);
-    }
-    .fC_char-count {
-      position: absolute;
-      bottom: 0.4em;
-      right: 0.6em;
-      font-size: 0.68rem;
-      color: var(--text-muted);
-      pointer-events: none;
-    }
-
-    /* ── Templates ── */
-    .fC_templates {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.38em;
-      margin-top: 0.55em;
-    }
-    .fC_chip {
-      background: var(--primary-light);
-      border: 1px solid rgba(0,151,167,0.28);
-      color: var(--primary);
-      border-radius: 20px;
-      padding: 0.28em 0.8em;
-      font-size: 0.77rem;
-      cursor: pointer;
-      min-height: 32px;
-      display: inline-flex;
-      align-items: center;
-      font-family: inherit;
-      transition: all var(--trans);
-      -webkit-tap-highlight-color: transparent;
-    }
-    @media (hover: hover) {
-      .fC_chip:hover { background: var(--primary); color: #fff; }
-    }
-
-    /* ── Generate btn ── */
-    .fC_gen-btn {
-      width: 100%;
-      min-height: 54px !important;
-      background: linear-gradient(135deg, #e91e63 0%, var(--accent) 100%);
-      color: #fff;
-      border: none;
-      border-radius: var(--radius);
-      font-family: inherit;
-      font-size: 1rem;
-      font-weight: 700;
-      cursor: pointer;
-      transition: all var(--trans);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.5em;
-      box-shadow: 0 4px 18px rgba(233,30,99,0.38);
-      -webkit-tap-highlight-color: transparent;
-    }
-    .fC_gen-btn:disabled {
-      opacity: 0.62;
-      cursor: not-allowed;
-      box-shadow: none;
-    }
-    @media (hover: hover) {
-      .fC_gen-btn:not(:disabled):hover {
-        transform: translateY(-1px);
-        box-shadow: 0 6px 24px rgba(233,30,99,0.48);
-      }
-    }
-
-    /* ── Spinner ── */
-    .fC_spinner {
-      width: 20px;
-      height: 20px;
-      border: 2.5px solid rgba(255,255,255,0.3);
-      border-top-color: #fff;
-      border-radius: 50%;
-      animation: fC_spin 0.65s linear infinite;
-      flex-shrink: 0;
-    }
-    @keyframes fC_spin { to { transform: rotate(360deg); } }
 
     /* ── Result ── */
     .fC_result { display: none; }
@@ -582,7 +408,7 @@
 
     /* ── Print ── */
     @media print {
-      .fC_header, .fC_mascot, .fC_gen-btn, .fC_result-actions,
+      .fC_header, .fC_mascot, .fC_result-actions,
       .fC_toasts, .fC_footer, .fC_history,
       .fC_card:not(.fC_result .fC_card) { display: none !important; }
       .fC_script-box { border: 1px solid #ccc; font-size: 14pt; }
@@ -968,69 +794,6 @@
     <button class="fC_qa-banner-btn" id="fC_dialogBtn" aria-label="Q&Aモードで台本を作る">はじめる</button>
   </div>
 
-  <!-- STEP 1: Caller type -->
-  <div class="fC_card">
-    <div class="fC_step-label"><span aria-hidden="true">👤</span> STEP 1 — 通話相手を選んでね♡</div>
-    <div class="fC_toggle-wrap" role="group" aria-label="通話相手の種別">
-      <button class="fC_toggle-btn" data-action="callerType" data-value="internal"
-              aria-pressed="false" id="fC_callerInternal">
-        🏢 庁内・社内<br><small style="opacity:.75;">内線・同僚・上司</small>
-      </button>
-      <button class="fC_toggle-btn" data-action="callerType" data-value="external"
-              aria-pressed="true" id="fC_callerExternal">
-        🌐 庁外・社外<br><small style="opacity:.75;">取引先・市民・業者</small>
-      </button>
-    </div>
-  </div>
-
-  <!-- STEP 2: Purpose -->
-  <div class="fC_card">
-    <div class="fC_step-label"><span aria-hidden="true">📝</span> STEP 2 — 電話の目的を教えてね♡</div>
-    <div class="fC_ta-wrap">
-      <textarea class="fC_textarea" id="fC_purpose"
-        placeholder="例：来週の打ち合わせ日程を確認したい&#10;例：請求書の送付先変更をお願いしたい&#10;例：担当者に取り次いでもらいたい"
-        maxlength="300" rows="4" aria-label="電話の目的・内容"></textarea>
-      <span class="fC_char-count" id="fC_charCount" aria-live="polite">0/300</span>
-    </div>
-    <div class="fC_templates" role="group" aria-label="よく使うテンプレート">
-      <button class="fC_chip" data-action="template" data-text="こちらのミスでご迷惑をおかけしてしまい、お詫びとご報告をしたい">🙇 ミスの謝罪</button>
-      <button class="fC_chip" data-action="template" data-text="追加の業務・作業をお願いしたい">📋 業務依頼</button>
-      <button class="fC_chip" data-action="template" data-text="いただいたご依頼・提案をお断りしたい">🚫 お断り</button>
-      <button class="fC_chip" data-action="template" data-text="お支払いや提出物の期限が過ぎており、確認と催促をしたい">⏰ 督促</button>
-      <button class="fC_chip" data-action="template" data-text="お客様からのクレーム・ご指摘について謝罪と説明をしたい">⚡ クレーム対応</button>
-    </div>
-  </div>
-
-  <!-- STEP 3: Keigo -->
-  <div class="fC_card">
-    <div class="fC_step-label"><span aria-hidden="true">🎩</span> STEP 3 — 敬語レベルを選んでね♡</div>
-    <div class="fC_keigo-wrap" role="group" aria-label="敬語レベルの選択">
-      <button class="fC_keigo-btn" data-action="keigo" data-value="humble"
-              aria-pressed="false" id="fC_keigoHumble">
-        <span class="ki">🙇</span>
-        <span class="kl">へりくだり</span>
-        <span class="kd">謙譲語強め</span>
-      </button>
-      <button class="fC_keigo-btn" data-action="keigo" data-value="standard"
-              aria-pressed="true" id="fC_keigoStandard">
-        <span class="ki">👔</span>
-        <span class="kl">標準</span>
-        <span class="kd">丁寧語</span>
-      </button>
-      <button class="fC_keigo-btn" data-action="keigo" data-value="friendly"
-              aria-pressed="false" id="fC_keigoFriendly">
-        <span class="ki">😊</span>
-        <span class="kl">フレンドリー</span>
-        <span class="kd">社内・親しい人</span>
-      </button>
-    </div>
-  </div>
-
-  <!-- Generate -->
-  <button class="fC_gen-btn" id="fC_genBtn" aria-label="AIで電話台本を生成する">
-    <span id="fC_genIcon" aria-hidden="true">✨</span>
-    <span id="fC_genLabel">台本を作ってキュン♡</span>
-  </button>
 
   <!-- Result -->
   <div class="fC_result" id="fC_result" aria-live="polite">
@@ -1323,11 +1086,6 @@
   const $ = id => document.getElementById(id);
   const D = {
     mascot:    $("fC_mascotMsg"),
-    purpose:   $("fC_purpose"),
-    charCount: $("fC_charCount"),
-    genBtn:    $("fC_genBtn"),
-    genIcon:   null, // refreshed dynamically
-    genLabel:  $("fC_genLabel"),
     result:    $("fC_result"),
     scriptBox: $("fC_scriptBox"),
     copyBtn:   $("fC_copyBtn"),
@@ -1377,33 +1135,10 @@
   /* ── Mascot ─────────────────────────────────── */
   function mascot(msg) { D.mascot.textContent = msg; }
 
-  /* ── Char count ─────────────────────────────── */
-  function updateCount(n) {
-    D.charCount.textContent = n + "/300";
-    D.charCount.style.color = n > 250 ? "var(--warning)" : "var(--text-muted)";
-  }
-
   /* ── Loading state ──────────────────────────── */
   function setLoading(on) {
     S.isLoading = on;
-    D.genBtn.disabled = on;
-    var iconEl = $("fC_genIcon");
-    if (on) {
-      D.genLabel.textContent = "台本を考えてるキュン…";
-      var sp = document.createElement("span");
-      sp.className = "fC_spinner";
-      sp.id = "fC_genIcon";
-      sp.setAttribute("aria-hidden", "true");
-      if (iconEl) iconEl.replaceWith(sp);
-    } else {
-      D.genLabel.textContent = "台本を作ってキュン♡";
-      var ic = document.createElement("span");
-      ic.id = "fC_genIcon";
-      ic.setAttribute("aria-hidden", "true");
-      ic.textContent = "✨";
-      var cur = $("fC_genIcon");
-      if (cur) cur.replaceWith(ic);
-    }
+    D.regenBtn.disabled = on;
   }
 
   /* ── Prompt ─────────────────────────────────── */
@@ -1486,7 +1221,6 @@
   function generate() {
     if (!S.purpose.trim()) {
       toast("📝 電話の目的を入力してね♡", "warning");
-      D.purpose.focus();
       return;
     }
     mascot(preGenMsg());
@@ -1615,37 +1349,6 @@
   /* ── Modal ──────────────────────────────────── */
 
 
-  /* ── Event delegation ───────────────────────── */
-  document.addEventListener("click", function (e) {
-    var btn = e.target.closest("[data-action]");
-    if (!btn) return;
-    var action = btn.dataset.action;
-    var value  = btn.dataset.value;
-
-    if (action === "callerType") {
-      S.callerType = value;
-      document.querySelectorAll("[data-action=callerType]").forEach(function (b) {
-        b.setAttribute("aria-pressed", b.dataset.value === value ? "true" : "false");
-      });
-      mascot("「" + (value === "internal" ? "庁内・社内" : "庁外・社外") + "」への電話ね♡ 目的も入力してね、台本作るキュン♡");
-    }
-
-    if (action === "keigo") {
-      S.keigoLevel = value;
-      document.querySelectorAll("[data-action=keigo]").forEach(function (b) {
-        b.setAttribute("aria-pressed", b.dataset.value === value ? "true" : "false");
-      });
-    }
-
-    if (action === "template") {
-      var text = btn.dataset.text;
-      D.purpose.value = text;
-      S.purpose = text;
-      updateCount(text.length);
-      D.purpose.focus();
-      mascot("いいね♡ 詳細を追加してもOKだキュンよ♡");
-    }
-  });
 
   D.histList.addEventListener("click", function (e) {
     var item = e.target.closest("[data-hi]");
@@ -1658,7 +1361,6 @@
     }
   });
 
-  D.genBtn.addEventListener("click",   generate);
   D.regenBtn.addEventListener("click", generate);
   D.copyBtn.addEventListener("click",  copyScript);
   D.printBtn.addEventListener("click", function () { window.print(); });
@@ -1921,10 +1623,6 @@
     if ($("fC_dialogOverlay").classList.contains("open")) closeDialog();
   });
 
-  D.purpose.addEventListener("input", function (e) {
-    S.purpose = e.target.value;
-    updateCount(e.target.value.length);
-  });
 
   /* ── Global error handlers ──────────────────── */
   window.addEventListener("error", function (e) {
@@ -2325,15 +2023,6 @@
     S.purpose     = _dlgAnswers.purpose || "ご用件の確認";
 
     closeDialog();
-
-    document.querySelectorAll("[data-action=callerType]").forEach(function(b) {
-      b.setAttribute("aria-pressed", b.dataset.value === S.callerType ? "true" : "false");
-    });
-    document.querySelectorAll("[data-action=keigo]").forEach(function(b) {
-      b.setAttribute("aria-pressed", b.dataset.value === S.keigoLevel ? "true" : "false");
-    });
-    D.purpose.value = S.purpose;
-    updateCount(S.purpose.length);
 
     mascot(preGenMsg());
     setLoading(true);
