@@ -627,52 +627,11 @@
     background: linear-gradient(135deg, #553c9a, #6b46c1) !important;
     color: #fff !important; border-color: transparent !important;
   }
-  /* ── Q&A Banner ── */
-  .fC_qa-banner {
-    background: linear-gradient(135deg, var(--primary-light), #fff);
-    border: 1.5px solid rgba(0,151,167,0.25);
-    border-radius: var(--radius);
-    padding: 0.85em 1em;
-    margin: 0 1em;
-    display: flex; align-items: center; justify-content: space-between; gap: 0.8em;
-  }
-  .fC_qa-banner-left { display: flex; align-items: center; gap: 0.6em; min-width: 0; }
-  .fC_qa-banner-icon { font-size: 1.5rem; flex-shrink: 0; }
-  .fC_qa-banner-title { font-size: 0.88rem; font-weight: 700; color: var(--primary); }
-  .fC_qa-banner-sub   { font-size: 0.73rem; color: var(--text-muted); }
-  .fC_qa-banner-btn {
-    background: var(--primary); color: #fff; border: none;
-    border-radius: 10px; padding: 0.55em 1.1em;
-    font-family: inherit; font-size: 0.85rem; font-weight: 700;
-    cursor: pointer; white-space: nowrap; flex-shrink: 0;
-    min-height: 44px; -webkit-tap-highlight-color: transparent;
-    transition: background 0.15s ease;
-  }
-  .fC_qa-banner-btn:hover { background: #00838f; }
-
-  /* ── Dialog Q&A Box ── */
-  .fC_dialog-box {
-    background: #fff; border-radius: 16px;
-    width: 100%; max-width: 480px; max-height: 85dvh;
-    display: flex; flex-direction: column;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.22);
-    animation: fC_up 0.22s ease; overflow: hidden;
-  }
-  .fC_dialog-hdr {
-    display: flex; align-items: center; gap: 0.5em;
-    padding: 0.9em 1em;
-    border-bottom: 1px solid var(--border);
-    font-weight: 700; font-size: 1rem; flex-shrink: 0;
-  }
-  .fC_dialog-close {
-    margin-left: auto; background: none; border: none;
-    font-size: 1.1rem; cursor: pointer; color: var(--text-muted);
-    padding: 0.3em; line-height: 1; -webkit-tap-highlight-color: transparent;
-  }
-  .fC_dialog-close:hover { color: var(--text); }
+  /* ── Q&A Inline ── */
   .fC_dialog-chat {
-    flex: 1; overflow-y: auto; padding: 1em;
-    display: flex; flex-direction: column; gap: 0.75em; min-height: 100px;
+    display: flex; flex-direction: column; gap: 0.75em;
+    max-height: 300px; overflow-y: auto;
+    padding-bottom: 0.5em;
   }
   .fC_dialog-row { display: flex; gap: 0.55em; align-items: flex-start; }
   .fC_dialog-row.user { flex-direction: row-reverse; }
@@ -690,8 +649,9 @@
     border-radius: 14px 4px 14px 14px; color: #880e4f;
   }
   .fC_dialog-step {
-    flex-shrink: 0; padding: 0 1em 1em;
+    padding-top: 0.75em;
     border-top: 1px solid var(--border);
+    margin-top: 0.25em;
   }
   .fC_dialog-step-opts { display: flex; flex-direction: column; gap: 0.45em; padding-top: 0.75em; }
   .fC_dialog-opt {
@@ -782,16 +742,11 @@
     <div class="fC_badges-row" id="fC_badgesRow"></div>
   </div>
 
-  <!-- Q&A Mode Banner -->
-  <div class="fC_qa-banner" id="fC_qaBanner">
-    <div class="fC_qa-banner-left">
-      <span class="fC_qa-banner-icon" aria-hidden="true">💬</span>
-      <div>
-        <div class="fC_qa-banner-title">Q&amp;Aで台本を作る（おすすめ）</div>
-        <div class="fC_qa-banner-sub">ふじキュン♡が質問するだけで、状況に合った台本が完成するよ！</div>
-      </div>
-    </div>
-    <button class="fC_qa-banner-btn" id="fC_dialogBtn" aria-label="Q&Aモードで台本を作る">はじめる</button>
+  <!-- Q&A Inline -->
+  <div class="fC_card" id="fC_qaInline">
+    <div class="fC_step-label"><span aria-hidden="true">🌸</span> 台本をつくろう♡</div>
+    <div class="fC_dialog-chat" id="fC_dialogChat" aria-live="polite"></div>
+    <div class="fC_dialog-step" id="fC_dialogStep"></div>
   </div>
 
 
@@ -839,18 +794,6 @@
 </footer>
 
 
-<!-- Dialog Q&A overlay -->
-<div class="fC_overlay" id="fC_dialogOverlay" role="dialog" aria-modal="true" aria-labelledby="fC_dialogTitle">
-  <div class="fC_dialog-box">
-    <div class="fC_dialog-hdr">
-      <span aria-hidden="true">🌸</span>
-      <span id="fC_dialogTitle">台本をつくろう♡</span>
-      <button class="fC_dialog-close" id="fC_dialogClose" aria-label="閉じる">✕</button>
-    </div>
-    <div class="fC_dialog-chat" id="fC_dialogChat" aria-live="polite"></div>
-    <div class="fC_dialog-step" id="fC_dialogStep"></div>
-  </div>
-</div>
 
 <!-- Auth modal (Cloud sync / OTP) -->
 <div class="fC_overlay" id="fC_authModal" role="dialog" aria-modal="true" aria-labelledby="fC_authModalTitle">
@@ -1620,7 +1563,6 @@
   document.addEventListener("keydown", function (e) {
     if (e.key !== "Escape") return;
     if (_authModalOpen) closeAuthModal();
-    if ($("fC_dialogOverlay").classList.contains("open")) closeDialog();
   });
 
 
@@ -1894,12 +1836,7 @@
     _dlgStep    = 0;
     $("fC_dialogChat").innerHTML = "";
     $("fC_dialogStep").innerHTML = "";
-    $("fC_dialogOverlay").classList.add("open");
     setTimeout(renderDlgStep, 80);
-  }
-
-  function closeDialog() {
-    $("fC_dialogOverlay").classList.remove("open");
   }
 
   function renderDlgStep() {
@@ -2022,7 +1959,7 @@
     S.keigoLevel  = _dlgAnswers.tone || "standard";
     S.purpose     = _dlgAnswers.purpose || "ご用件の確認";
 
-    closeDialog();
+    openDialog();
 
     mascot(preGenMsg());
     setLoading(true);
@@ -2060,11 +1997,6 @@
       .finally(function() { setLoading(false); });
   }
 
-  $("fC_dialogBtn").addEventListener("click", openDialog);
-  $("fC_dialogClose").addEventListener("click", closeDialog);
-  $("fC_dialogOverlay").addEventListener("click", function(e) {
-    if (e.target === $("fC_dialogOverlay")) closeDialog();
-  });
   $("fC_dialogStep").addEventListener("click", function(e) {
     var opt = e.target.closest("[data-dlgopt]");
     if (!opt) return;
@@ -2085,8 +2017,9 @@
     var st = loadStats();
     var lv = getLevel(st.total);
     mascot(st.total === 0
-      ? "やあ！ふじキュン♡だキュンよ♡ 電話前の緊張、一緒に解消しようね！通話相手と目的を教えてくれれば台本を作るキュン♡"
+      ? "やあ！ふじキュン♡だキュンよ♡ 電話前の緊張、一緒に解消しようね！"
       : lv.avatar + " " + lv.name + "のあなた！今日も一緒に頑張るキュン♡");
+    openDialog();
   }
 
   init();
