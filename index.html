@@ -695,6 +695,36 @@
   .fC_dialog-progress {
     font-size: 0.72rem; color: var(--text-muted); text-align: right; padding-top: 0.6em;
   }
+
+  /* ── Follow-up scenarios ── */
+  .fC_followup-panel { margin-top: 1em; }
+  .fC_followup-label {
+    font-size: 0.72rem; font-weight: 700; color: var(--text-muted);
+    letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 0.55em;
+  }
+  .fC_followup-chips { display: flex; flex-wrap: wrap; gap: 0.38em; }
+  .fC_followup-chip {
+    background: #fff; border: 1.5px solid var(--border);
+    border-radius: 20px; padding: 0.3em 0.85em;
+    font-size: 0.8rem; cursor: pointer; font-family: inherit;
+    color: var(--text); min-height: 36px;
+    display: inline-flex; align-items: center; gap: 0.25em;
+    transition: border-color var(--trans), background var(--trans); -webkit-tap-highlight-color: transparent;
+  }
+  .fC_followup-chip:hover:not(:disabled) { border-color: var(--primary); background: var(--primary-light); color: var(--primary); }
+  .fC_followup-chip:disabled { opacity: 0.45; cursor: not-allowed; }
+  .fC_followup-card {
+    background: var(--primary-light); border: 1px solid rgba(0,151,167,0.22);
+    border-radius: var(--radius); padding: 0.9em 1em; margin-top: 0.75em;
+  }
+  .fC_followup-card-label {
+    font-size: 0.72rem; font-weight: 700; color: var(--primary);
+    letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 0.45em;
+  }
+  .fC_followup-card-text {
+    font-size: 0.88rem; line-height: 1.72; color: var(--text);
+    white-space: pre-wrap; word-break: break-all; margin-bottom: 0.6em;
+  }
   </style>
 </head>
 <body>
@@ -777,6 +807,9 @@
       </div>
       <div id="fC_pracResult"></div>
     </div>
+
+    <!-- Follow-up scenario chain -->
+    <div id="fC_followUpArea"></div>
   </div>
 
   <!-- History -->
@@ -1186,6 +1219,7 @@
         var msg    = postGenMsg(result.leveled);
         if (msg) mascot(msg);
         toast("🎮 デモ台本ができたキュン♡（サンプル）", "success");
+        initFollowUp();
         setTimeout(function () {
           D.result.scrollIntoView({ behavior: "smooth", block: "nearest" });
         }, 80);
@@ -1210,6 +1244,7 @@
         var msg    = postGenMsg(result.leveled);
         if (msg) mascot(msg);
         toast("✨ 台本ができたキュン♡", "success");
+        initFollowUp();
         setTimeout(function () {
           D.result.scrollIntoView({ behavior: "smooth", block: "nearest" });
         }, 80);
@@ -1986,6 +2021,7 @@
         var msg    = postGenMsg(result.leveled);
         if (msg) mascot(msg);
         toast("✨ 台本ができたキュン♡", "success");
+        initFollowUp();
         setTimeout(function() {
           D.result.scrollIntoView({ behavior: "smooth", block: "nearest" });
         }, 80);
@@ -1995,6 +2031,132 @@
         mascot("うまくいかなかったキュン…💦 もう一度試してね♡");
       })
       .finally(function() { setLoading(false); });
+  }
+
+  /* ── Follow-up scenario chain ───────────────── */
+  var FOLLOW_UP_SCENARIOS = [
+    { id: "angry",    icon: "😤", label: "怒られた",             desc: "相手が強い怒り・不満を示してきた" },
+    { id: "refused",  icon: "🚫", label: "断られた",             desc: "依頼・お願いをきっぱり断られた" },
+    { id: "escalate", icon: "👔", label: "上司を出せと言われた", desc: "責任者・上席への対応を強く求められた" },
+    { id: "nitpick",  icon: "💬", label: "揚げ足を取られた",     desc: "言葉尻・表現の細部に難癖をつけられた" },
+    { id: "explain",  icon: "🤔", label: "詳しく説明を求められた", desc: "具体的な根拠や詳細な説明を求められた" },
+    { id: "absent",   icon: "⏳", label: "担当者が不在だった",   desc: "担当者が席を外しており折り返しになった" },
+  ];
+
+  function buildFollowUpPrompt(scenario, chain) {
+    var callerMap = {
+      internal: "庁内・社内の相手",
+      external: "庁外・社外の相手（取引先・市民・業者など）",
+    };
+    var keigoMap = {
+      humble:   "謙譲語を多用した非常に丁寧な敬語",
+      standard: "一般的な丁寧語・敬語",
+      friendly: "社内向けの柔らかい口調",
+    };
+    var lines = [
+      "あなたはビジネス電話の専門コーチです。",
+      "以下の電話のやり取りに続けて「" + scenario.desc + "」という展開になりました。",
+      "この状況への適切な切り返し・対応台本を作成してください。",
+      "",
+      "## 電話の基本情報",
+      "- 通話相手: " + (callerMap[S.callerType] || "社外"),
+      "- 電話の目的: " + (S.purpose || "ご用件の確認"),
+      "- 敬語レベル: " + (keigoMap[S.keigoLevel] || "標準"),
+      "",
+      "## これまでのやり取り",
+    ];
+    chain.forEach(function(item, i) {
+      lines.push(i === 0 ? "【最初の台本】" : "【" + item.label + "への対応台本】");
+      lines.push(item.script);
+      lines.push("");
+    });
+    lines.push("## 今回の展開");
+    lines.push(scenario.desc);
+    lines.push("");
+    lines.push("## 出力ルール");
+    lines.push("- 声に出しやすい自然な日本語で");
+    lines.push("- 名前・部署名は「〇〇」でプレースホルダーにすること");
+    lines.push("- 台本テキストのみ出力（見出し・説明文は不要）");
+    lines.push("- 100〜250字程度");
+    return lines.join("\n");
+  }
+
+  function copyAny(text) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text)
+        .then(function() { toast("📋 コピーできたキュン♡", "success"); })
+        .catch(function() { legacyCopy(text); });
+    } else {
+      legacyCopy(text);
+    }
+  }
+  function legacyCopy(text) {
+    var ta = document.createElement("textarea");
+    ta.value = text;
+    ta.style.cssText = "position:fixed;opacity:0;top:0;left:0;";
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand("copy"); toast("📋 コピーできたキュン♡", "success"); }
+    catch(_) { toast("😅 コピーできなかったキュン…", "error"); }
+    document.body.removeChild(ta);
+  }
+
+  function renderFollowUpPanel(container, chain) {
+    var panel = document.createElement("div");
+    panel.className = "fC_followup-panel";
+    panel.innerHTML = '<div class="fC_followup-label">この後の展開に備える</div>'
+      + '<div class="fC_followup-chips">'
+      + FOLLOW_UP_SCENARIOS.map(function(sc) {
+          return '<button class="fC_followup-chip" data-scid="' + escHtml(sc.id) + '">'
+            + sc.icon + '&nbsp;' + escHtml(sc.label) + '</button>';
+        }).join("")
+      + '</div>';
+    var resultEl = document.createElement("div");
+    resultEl.className = "fC_followup-result";
+    panel.appendChild(resultEl);
+    container.appendChild(panel);
+
+    panel.querySelector(".fC_followup-chips").addEventListener("click", function(e) {
+      var btn = e.target.closest("[data-scid]");
+      if (!btn || btn.disabled) return;
+      var sc;
+      for (var i = 0; i < FOLLOW_UP_SCENARIOS.length; i++) {
+        if (FOLLOW_UP_SCENARIOS[i].id === btn.dataset.scid) { sc = FOLLOW_UP_SCENARIOS[i]; break; }
+      }
+      if (!sc) return;
+      panel.querySelectorAll(".fC_followup-chip").forEach(function(b) { b.disabled = true; });
+      generateFollowUp(sc, chain, resultEl, panel);
+    });
+  }
+
+  function generateFollowUp(scenario, chain, resultEl, panel) {
+    resultEl.innerHTML = '<div style="padding:0.5em 0;color:var(--text-muted);font-size:0.85rem;">🌸 考えてるキュン…</div>';
+    callWithRetry(buildFollowUpPrompt(scenario, chain))
+      .then(function(text) {
+        text = text.trim();
+        var newChain = chain.concat([{ label: scenario.icon + " " + scenario.label, script: text }]);
+        var card = document.createElement("div");
+        card.className = "fC_followup-card";
+        card.innerHTML = '<div class="fC_followup-card-label">' + escHtml(scenario.icon + " " + scenario.label) + ' の場合の返し方</div>'
+          + '<div class="fC_followup-card-text">' + escHtml(text) + '</div>'
+          + '<button class="fC_act-btn fC_act-btn--copy" style="margin-top:0.1em;">📋 コピー</button>';
+        card.querySelector(".fC_act-btn--copy").addEventListener("click", function() { copyAny(text); });
+        resultEl.innerHTML = "";
+        resultEl.appendChild(card);
+        panel.querySelectorAll(".fC_followup-chip").forEach(function(b) { b.disabled = false; });
+        renderFollowUpPanel(resultEl, newChain);
+        setTimeout(function() { resultEl.scrollIntoView({ behavior: "smooth", block: "nearest" }); }, 60);
+      })
+      .catch(function(err) {
+        resultEl.innerHTML = '<div style="color:var(--warning);padding:0.5em 0;font-size:0.85rem;">' + escHtml(errMsg(err)) + '</div>';
+        panel.querySelectorAll(".fC_followup-chip").forEach(function(b) { b.disabled = false; });
+      });
+  }
+
+  function initFollowUp() {
+    var area = $("fC_followUpArea");
+    area.innerHTML = "";
+    renderFollowUpPanel(area, [{ label: "最初の台本", script: S.script }]);
   }
 
   $("fC_dialogStep").addEventListener("click", function(e) {
