@@ -2376,6 +2376,9 @@
     S.keigoLevel  = _dlgAnswers.tone || "standard";
     S.purpose     = _dlgAnswers.purpose || "ご用件の確認";
 
+    // openDialog() が _dlgAnswers をリセットするため、プロンプトは先に組み立てる
+    var dialogPrompt = buildDialogPrompt();
+
     openDialog();
 
     mascot(preGenMsg(), "think");
@@ -2386,7 +2389,7 @@
       ? new Promise(function(resolve) {
           setTimeout(function() { resolve(getDemoScript(S.purpose, S.callerType, S.keigoLevel)); }, 1000);
         })
-      : callWithRetry(buildDialogPrompt());
+      : callWithRetry(dialogPrompt);
 
     apiCall
       .then(function(text) {
