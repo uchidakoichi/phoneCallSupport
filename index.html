@@ -680,12 +680,11 @@
   }
   .fC_prac-script {
     background: rgba(255,255,255,0.07);
-    border-radius: 8px; padding: 0.75em;
-    font-size: 0.88rem; line-height: 1.7;
-    color: rgba(255,255,255,0.88);
+    border-radius: 8px; padding: 0.85em 0.95em;
+    font-size: 0.95rem; line-height: 1.85;
+    color: rgba(255,255,255,0.92);
     margin-bottom: 0.9em;
-    max-height: 140px; overflow-y: auto;
-    white-space: pre-wrap;
+    white-space: pre-wrap; word-break: break-word;
   }
   .fC_prac-controls { display: flex; align-items: center; gap: 0.7em; margin-bottom: 0.75em; }
   .fC_rec-btn {
@@ -1790,7 +1789,7 @@
   });
 
   /* ── Supabase Cloud Sync ────────────────────── */
-  var _authStep      = "idle"; // "idle" | "code_sent"
+  var _authStep      = "idle"; // "idle" | "link_sent"
   var _authEmail     = "";
   var _authModalOpen = false;
 
@@ -1804,9 +1803,18 @@
           _sb = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseAnonKey);
           if (_authModalOpen) renderAuthModal();
           _sb.auth.onAuthStateChange(function(event, session) {
+            var prev = _sbUser;
             _sbUser = session ? session.user : null;
             updateCloudBtn();
-            if (_sbUser) syncFromCloud();
+            if (_sbUser) {
+              syncFromCloud();
+              if (!prev && event === "SIGNED_IN") {
+                _authStep = "idle";
+                _authEmail = "";
+                if (_authModalOpen) renderAuthModal();
+                toast("✅ ログインできたキュン♡ 履歴を同期するよ！", "success");
+              }
+            }
           });
           _sb.auth.getSession().then(function(res) {
             _sbUser = (res.data && res.data.session) ? res.data.session.user : null;
@@ -1876,37 +1884,20 @@
       return;
     }
 
-    if (_authStep === "code_sent") {
+    if (_authStep === "link_sent") {
       content.innerHTML =
-        '<p style="font-size:0.84rem;color:var(--text-muted);margin-bottom:1em;line-height:1.6;">'
-        + '📧 <strong>' + escHtml(_authEmail) + '</strong> に6桁のコードを送ったキュン♡<br>メールを確認してコードを入力してね！</p>'
-        + '<div class="fC_form-group">'
-        + '<label class="fC_label" for="fC_otpCode">6桁のコード</label>'
-        + '<input type="text" class="fC_input" id="fC_otpCode" placeholder="123456" maxlength="6" pattern="[0-9]{6}" inputmode="numeric" autocomplete="one-time-code" style="text-align:center;font-size:1.4rem;letter-spacing:0.3em;font-weight:700;">'
+        '<div style="text-align:center;padding:0.3em 0 0.2em;">'
+        + '<div style="font-size:2.6rem;margin-bottom:0.4em;">📬</div>'
+        + '<p style="font-size:0.92rem;font-weight:700;color:var(--primary);margin-bottom:0.5em;">メールを確認してキュン♡</p>'
+        + '<p style="font-size:0.83rem;color:var(--text-muted);line-height:1.75;margin-bottom:1.3em;">'
+        + '<strong>' + escHtml(_authEmail) + '</strong> にログイン用のリンクを送ったよ。<br>'
+        + 'メール内のリンクをタップすると、このアプリに戻って自動でログイン完了キュン♡</p>'
         + '</div>'
-        + '<button class="fC_btn-primary" id="fC_otpVerifyBtn" style="width:100%;min-height:46px;margin-bottom:0.5em;">✅ 確認する</button>'
-        + '<button class="fC_btn-secondary" id="fC_otpResendBtn" style="width:100%;min-height:40px;font-size:0.82rem;">📧 コードを再送信する</button>';
-
-      setTimeout(function() { var el = $("fC_otpCode"); if (el) el.focus(); }, 80);
-
-      $("fC_otpVerifyBtn").addEventListener("click", function() {
-        var code = ($("fC_otpCode") || {}).value || "";
-        if (!/^\d{6}$/.test(code)) { toast("🔢 6桁の数字を入力してキュン♡", "warning"); return; }
-        var btn = $("fC_otpVerifyBtn");
-        btn.disabled = true; btn.textContent = "確認中…";
-        _sb.auth.verifyOtp({ email: _authEmail, token: code, type: "email" })
-          .then(function(res) {
-            if (res.error) throw res.error;
-            toast("✅ ログイン完了キュン♡ 履歴を同期するよ！", "success");
-            closeAuthModal();
-          }).catch(function(e) {
-            toast("❌ コードが違うキュン… もう一度確認してね♡", "error", 5000);
-            btn.disabled = false; btn.textContent = "✅ 確認する";
-          });
-      });
+        + '<button class="fC_btn-secondary" id="fC_otpResendBtn" style="width:100%;min-height:44px;font-size:0.85rem;">📧 別のメールアドレスで送り直す</button>';
 
       $("fC_otpResendBtn").addEventListener("click", function() {
-        _authStep = "idle";
+        _authStep  = "idle";
+        _authEmail = "";
         renderAuthModal();
       });
       return;
@@ -1916,12 +1907,12 @@
     content.innerHTML =
       '<p style="font-size:0.82rem;color:var(--text-muted);margin-bottom:1em;line-height:1.6;">'
       + '☁️ メールアドレスを登録すると台本履歴・レベルをどの端末からでも引き継げるキュン♡<br>'
-      + '<small>6桁のコードがメールで届くよ。パスワード不要！</small></p>'
+      + '<small>ログイン用のリンクがメールで届くよ。パスワード不要！</small></p>'
       + '<div class="fC_form-group">'
       + '<label class="fC_label" for="fC_authEmail">メールアドレス</label>'
       + '<input type="email" class="fC_input" id="fC_authEmail" placeholder="you@example.com" autocomplete="email">'
       + '</div>'
-      + '<button class="fC_btn-primary" id="fC_authSendBtn" style="width:100%;min-height:46px;">📧 コードを送る</button>'
+      + '<button class="fC_btn-primary" id="fC_authSendBtn" style="width:100%;min-height:46px;">📧 ログインリンクを送る</button>'
       + '<p style="font-size:0.73rem;color:var(--text-muted);margin-top:0.6em;text-align:center;">登録しなくてもアプリは使えるキュン♡（履歴はこの端末のみ）</p>';
 
     setTimeout(function() { var el = $("fC_authEmail"); if (el) el.focus(); }, 80);
@@ -1931,16 +1922,16 @@
       if (!email || !/\S+@\S+\.\S+/.test(email)) { toast("📧 メールアドレスを入力してキュン♡", "warning"); return; }
       var btn = $("fC_authSendBtn");
       btn.disabled = true; btn.textContent = "送信中…";
-      _sb.auth.signInWithOtp({ email: email, options: { shouldCreateUser: true } })
+      _sb.auth.signInWithOtp({ email: email, options: { shouldCreateUser: true, emailRedirectTo: window.location.origin } })
         .then(function(res) {
           if (res.error) throw res.error;
           _authEmail = email;
-          _authStep  = "code_sent";
+          _authStep  = "link_sent";
           renderAuthModal();
-          toast("📧 コードを送ったキュン♡ メールを確認してね！", "success", 7000);
+          toast("📧 ログインリンクを送ったキュン♡ メールのリンクをタップしてね！", "success", 7000);
         }).catch(function(e) {
           toast("😵 送信失敗キュン… " + (e.message || ""), "error");
-          btn.disabled = false; btn.textContent = "📧 コードを送る";
+          btn.disabled = false; btn.textContent = "📧 ログインリンクを送る";
         });
     });
   }

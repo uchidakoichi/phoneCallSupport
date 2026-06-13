@@ -18,7 +18,7 @@
 ### 直近の決定事項
 - **AIは Groq のみ**（Gemini・OpenAI は廃止）。全リクエストはサーバープロキシ経由
 - **ユーザー入力 API キーはゼロ**。Groq・Hume・Supabase はすべて Vercel 環境変数で管理
-- **クラウド同期は OTP メール認証**（6桁コード）。ユーザーはメールアドレスだけ入力すればよい
+- **クラウド同期はマジックリンク認証**（2026-06-13 に6桁コードから変更）。Supabase デフォルトのメールテンプレートが送るのはコードではなくサインインリンクのため、UI をリンク方式に統一。`signInWithOtp` に `emailRedirectTo: window.location.origin` を渡し、ユーザーがメール内リンクをタップして戻ると `detectSessionInUrl`（Supabase JS デフォルト）→ `onAuthStateChange`（`SIGNED_IN`）で自動ログイン。ユーザーはメールアドレスだけ入力すればよい
 - **設定モーダル・⚙️ボタンを削除**。テンプレートをハードルの高いビジネス場面に差し替え
 - **Step 1/2/3 を UI から削除**（2026-06-08）。台本生成のエントリーポイントを「Q&Aで台本を作る」ダイアログのみに統一。通話相手・目的・敬語レベルはすべてダイアログ内の Q&A で収集する
 - **Q&A をモーダルからインライン表示に変更**（2026-06-08）。「はじめる」ボタン・オーバーレイを廃止し、ページロード時に Q&A チャットが自動起動。台本生成後は即座にリセットされ次の台本作りを開始できる
@@ -26,11 +26,11 @@
 - **印刷を専用台本レイアウトに刷新**（2026-06-13）。Web ページをそのまま印刷するのをやめ、印刷ボタン押下時に `buildPrintDoc()` が専用の印刷用ドキュメント（`#fC_printDoc`）を生成。タイトル・メタ情報（通話相手/目的/敬語レベル/作成日）・大きく読みやすいメイン台本・フォローアップ台本を、声に出して読むためのきれいなレイアウトで出力する。〇〇プレースホルダーは記入欄として強調表示
 
 ### 未解決の課題
-- Supabase の **Email Templates → Magic Link** を `{{ .Token }}` の6桁コード形式に変更する必要あり（まだ確認中）
+- マジックリンクのリダイレクト先（本番 URL、ローカル開発時は `http://localhost:3456` 等）を Supabase の **Authentication → URL Configuration → Redirect URLs** に登録しておくこと。未登録だとリンクのリダイレクトが失敗する
 - HUME_API_KEY は Vercel に未設定の可能性あり（声分析が動かない場合は要確認）
 
 ### 次にやること
-- クラウド同期（OTP ログイン → 履歴引き継ぎ）の動作確認
+- クラウド同期（マジックリンクログイン → 履歴引き継ぎ）の動作確認
 - 必要に応じて Gemini 2.5 Flash TTS による台本読み上げ機能の追加
 
 ---
@@ -62,7 +62,7 @@
 1. **台本生成** — 通話相手（庁内/庁外）× 敬語レベル（謙譲語/標準/フレンドリー）× 目的テキストから Groq が台本を生成
 2. **音読練習モード** — 録音 → Whisper 文字起こし → Hume AI 声分析 → ふじキュン♡フィードバック
 3. **成長ゲーミフィケーション** — レベル・バッジシステム（localStorage）
-4. **クラウド同期** — Supabase OTP（6桁コード）認証後、台本履歴・統計をクロスデバイス共有
+4. **クラウド同期** — Supabase マジックリンク認証後、台本履歴・統計をクロスデバイス共有
 
 ---
 
@@ -115,7 +115,7 @@ IIFE 内の主要な変数・関数:
   S                         — アプリ状態（callerType, keigoLevel, demoMode 等）
   _sb / _sbUser             — Supabase クライアント・ログインユーザー
   _humeEnabled              — Hume AI が有効かどうか（api/config から取得）
-  _authStep / _authEmail    — OTP 認証フロー状態
+  _authStep / _authEmail    — マジックリンク認証フロー状態（idle / link_sent）
   loadStats() / saveStats() — ゲーミフィケーション統計
   renderGrowth()            — 成長カード描画
   callGroqProxy()           — /api/generate を呼ぶ
@@ -128,8 +128,8 @@ IIFE 内の主要な変数・関数:
   pollHumeJob()             — /api/hume-status + /api/hume-predictions でポーリング
   renderPracticeResult()    — 練習結果描画
   initSupabase()            — /api/config フェッチ → _humeEnabled 設定 → Supabase 初期化
-  openAuthModal()           — OTP 認証モーダルを開く
-  renderAuthModal()         — 認証状態に応じた UI を描画（idle / code_sent / logged_in）
+  openAuthModal()           — 認証（マジックリンク）モーダルを開く
+  renderAuthModal()         — 認証状態に応じた UI を描画（idle / link_sent / logged_in）
   syncFromCloud()           — クラウドから履歴・統計を取得
   init()                    — アプリ起動処理
 ```
@@ -149,6 +149,8 @@ IIFE 内の主要な変数・関数:
 
 ## 過去の経緯
 
+- **2026-06-13:** 認証を6桁コードからマジックリンクに変更。Supabase デフォルトのメールテンプレートが送るのはリンクのため、コード入力 UI（`verifyOtp`）を廃止し「メールのリンクをタップ→自動ログイン」方式に。`signInWithOtp` に `emailRedirectTo` を追加、`onAuthStateChange` の `SIGNED_IN` で復帰時にログイン完了トーストを表示。`_authStep` の `code_sent` を `link_sent` にリネーム
+- **2026-06-13:** 音読練習モードの台本表示の高さ制限（`max-height:140px; overflow-y:auto`）を撤廃。スクロール不要で台本全体を一度に表示。フォント・行間も拡大
 - **2026-06-13:** 印刷レイアウトを刷新。Web ページそのままの印刷をやめ、`buildPrintDoc()` が専用印刷ドキュメント（`#fC_printDoc`）を動的生成する方式に変更。`@media print` で `#fC_printDoc` 以外を非表示にし、タイトル・メタ情報・大きく読みやすいメイン台本・フォローアップ台本を台本として実用的なレイアウトで出力。〇〇プレースホルダーを記入欄として強調
 - **2026-06-08:** 展開別フォローアップ台本機能を追加。メイン台本生成後に6シナリオ（怒られた・断られた・上司を出せ・揚げ足・詳しく説明・担当者不在）のチップを表示し、クリックで対応台本を連鎖生成
 - **2026-06-08:** Q&A をモーダルから廃止しインライン表示に変更。ページロード時に自動起動、生成後に即リセット
