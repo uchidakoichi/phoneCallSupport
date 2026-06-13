@@ -407,11 +407,125 @@
     }
 
     /* ── Print ── */
+    #fC_printDoc { display: none; }
+
     @media print {
-      .fC_header, .fC_mascot, .fC_result-actions,
-      .fC_toasts, .fC_footer, .fC_history,
-      .fC_card:not(.fC_result .fC_card) { display: none !important; }
-      .fC_script-box { border: 1px solid #ccc; font-size: 14pt; }
+      @page { margin: 16mm 17mm; }
+      html, body {
+        background: #fff !important;
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+      body > *:not(#fC_printDoc) { display: none !important; }
+      #fC_printDoc {
+        display: block !important;
+        color: #1a2332;
+        font-family: "Noto Sans JP", system-ui, -apple-system, sans-serif;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+
+      .fC_pr-head {
+        text-align: center;
+        padding-bottom: 0.7em;
+        margin-bottom: 1.4em;
+        border-bottom: 3px double #0097a7;
+      }
+      .fC_pr-brand {
+        font-size: 21pt;
+        font-weight: 800;
+        color: #00838f;
+        letter-spacing: 0.05em;
+      }
+      .fC_pr-sub {
+        font-size: 9.5pt;
+        color: #6b7280;
+        margin-top: 0.45em;
+      }
+
+      .fC_pr-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.55em 1.8em;
+        padding: 0.75em 1.1em;
+        margin-bottom: 1.7em;
+        background: #f3fbfc;
+        border: 1px solid #cce9ec;
+        border-radius: 8px;
+      }
+      .fC_pr-meta-label {
+        display: block;
+        font-size: 7.5pt;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        color: #00838f;
+        margin-bottom: 0.18em;
+      }
+      .fC_pr-meta-val {
+        font-size: 10.5pt;
+        font-weight: 700;
+        color: #1a2332;
+      }
+
+      .fC_pr-sectlabel {
+        font-size: 11pt;
+        font-weight: 800;
+        color: #00838f;
+        margin-bottom: 0.65em;
+        padding-left: 0.1em;
+      }
+      .fC_pr-script {
+        font-size: 13.5pt;
+        line-height: 2.05;
+        white-space: pre-wrap;
+        word-break: break-word;
+        padding: 1.15em 1.35em;
+        border: 1px solid #cfd8dc;
+        border-left: 5px solid #0097a7;
+        border-radius: 0 8px 8px 0;
+        background: #fcffff;
+        margin-bottom: 1.9em;
+      }
+      .fC_pr-blank {
+        color: #0097a7;
+        font-weight: 700;
+        border-bottom: 1.5px dashed #4dd0e1;
+        padding: 0 0.18em;
+      }
+
+      .fC_pr-followups { margin-bottom: 1.7em; }
+      .fC_pr-fu {
+        page-break-inside: avoid;
+        border: 1px solid #e2e8f0;
+        border-left: 4px solid #80cbc4;
+        border-radius: 0 6px 6px 0;
+        padding: 0.75em 1.05em;
+        margin-bottom: 0.9em;
+      }
+      .fC_pr-fu-label {
+        font-size: 10.5pt;
+        font-weight: 800;
+        color: #00838f;
+        margin-bottom: 0.45em;
+      }
+      .fC_pr-fu-text {
+        font-size: 12pt;
+        line-height: 1.95;
+        white-space: pre-wrap;
+        word-break: break-word;
+      }
+
+      .fC_pr-foot {
+        margin-top: 1.6em;
+        padding-top: 0.75em;
+        border-top: 1px solid #e2e8f0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 8.5pt;
+        color: #9ca3af;
+      }
+      .fC_pr-foot-tip { color: #00838f; font-weight: 600; }
     }
 
   /* ── Demo banner ── */
@@ -841,6 +955,9 @@
 
 <!-- Toast container -->
 <div class="fC_toasts" id="fC_toasts" aria-live="assertive" aria-atomic="false" role="status"></div>
+
+<!-- Print-only document (populated on print) -->
+<div id="fC_printDoc" aria-hidden="true"></div>
 
 <script>
 (function () {
@@ -1341,7 +1458,7 @@
 
   D.regenBtn.addEventListener("click", generate);
   D.copyBtn.addEventListener("click",  copyScript);
-  D.printBtn.addEventListener("click", function () { window.print(); });
+  D.printBtn.addEventListener("click", function () { buildPrintDoc(); window.print(); });
 
   $("fC_cloudBtn").addEventListener("click", openAuthModal);
   $("fC_authCloseBtn").addEventListener("click", closeAuthModal);
@@ -1587,6 +1704,68 @@
 
   function escHtml(s) {
     return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  }
+
+  /* ── Print document ─────────────────────────── */
+  function buildPrintDoc() {
+    var callerMap = { internal: "庁内・社内", external: "庁外・社外" };
+    var keigoMap  = { humble: "謙譲語（最も丁寧）", standard: "標準敬語", friendly: "フレンドリー" };
+
+    function pad2(n) { return (n < 10 ? "0" : "") + n; }
+    function fmtDate(d) {
+      return d.getFullYear() + "/" + pad2(d.getMonth() + 1) + "/" + pad2(d.getDate());
+    }
+    function scriptHtml(text) {
+      return escHtml(text || "").replace(/[〇○]+/g, function (m) {
+        return '<span class="fC_pr-blank">' + m + '</span>';
+      });
+    }
+
+    var meta = [
+      { label: "通話相手",   val: callerMap[S.callerType] || "—" },
+      { label: "電話の目的", val: S.purpose || "—" },
+      { label: "敬語レベル", val: keigoMap[S.keigoLevel] || "—" },
+      { label: "作成日",     val: fmtDate(new Date()) },
+    ];
+    var metaHtml = meta.map(function (m) {
+      return '<div class="fC_pr-meta-item">'
+        + '<span class="fC_pr-meta-label">' + escHtml(m.label) + '</span>'
+        + '<span class="fC_pr-meta-val">' + escHtml(m.val) + '</span></div>';
+    }).join("");
+
+    var fuHtml = "";
+    var cards = document.querySelectorAll("#fC_followUpArea .fC_followup-card");
+    if (cards.length) {
+      var items = "";
+      cards.forEach(function (card) {
+        var labelEl = card.querySelector(".fC_followup-card-label");
+        var textEl  = card.querySelector(".fC_followup-card-text");
+        var label = labelEl ? labelEl.textContent.trim() : "";
+        var text  = textEl  ? textEl.textContent : "";
+        items += '<div class="fC_pr-fu">'
+          + '<div class="fC_pr-fu-label">' + escHtml(label) + '</div>'
+          + '<div class="fC_pr-fu-text">' + scriptHtml(text) + '</div></div>';
+      });
+      fuHtml = '<section class="fC_pr-followups">'
+        + '<div class="fC_pr-sectlabel">🔀 こんな展開になったら</div>'
+        + items + '</section>';
+    }
+
+    $("fC_printDoc").innerHTML =
+      '<div class="fC_pr-head">'
+        + '<div class="fC_pr-brand">📞 電話台本</div>'
+        + '<div class="fC_pr-sub">ふじキュン♡ がつくった、声に出して読むための台本だよ</div>'
+      + '</div>'
+      + '<div class="fC_pr-meta">' + metaHtml + '</div>'
+      + '<section class="fC_pr-main">'
+        + '<div class="fC_pr-sectlabel">📜 メイン台本</div>'
+        + '<div class="fC_pr-script">' + scriptHtml(S.script) + '</div>'
+      + '</section>'
+      + fuHtml
+      + '<div class="fC_pr-foot">'
+        + '<span class="fC_pr-foot-tip">🌸 深呼吸して、ゆっくり、はっきり。きっと大丈夫キュン♡</span>'
+        + '<span>FujiCall ふじキュン♡</span>'
+      + '</div>';
   }
 
   D.practiceBtn.addEventListener("click", openPractice);
