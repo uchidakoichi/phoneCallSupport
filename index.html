@@ -838,6 +838,89 @@
     font-size: 0.88rem; line-height: 1.72; color: var(--text);
     white-space: pre-wrap; word-break: break-all; margin-bottom: 0.6em;
   }
+
+  /* ── ふじキュン character ───────────────── */
+  .fC_mascot { align-items: center; gap: 0.55em; }
+  .fC_mascot-char {
+    background: none; border: none; padding: 0; margin: 0; cursor: pointer;
+    flex-shrink: 0; line-height: 0; -webkit-tap-highlight-color: transparent;
+    animation: fujiBob 3.2s ease-in-out infinite;
+  }
+  .fC_mascot-char.fC_wiggle { animation: fujiWiggle 0.6s ease; }
+  .fC_fuji-img {
+    width: 78px; height: 78px; object-fit: contain; display: block;
+    filter: drop-shadow(0 3px 5px rgba(136,14,79,0.18));
+    -webkit-user-drag: none; user-select: none;
+  }
+  .fC_fuji-fallback { font-size: 2.6rem; line-height: 1; display: inline-block; }
+  .fC_mascot-bubble {
+    position: relative; flex: 1; min-width: 0;
+    background: #fff; border: 1.5px solid #f8bbd0; border-radius: 14px;
+    padding: 0.7em 0.85em; box-shadow: 0 2px 8px rgba(244,143,177,0.16);
+  }
+  .fC_mascot-bubble::before {
+    content: ""; position: absolute; left: -9px; top: 50%; transform: translateY(-50%);
+    border-width: 7px 9px 7px 0; border-style: solid;
+    border-color: transparent #f8bbd0 transparent transparent;
+  }
+  .fC_mascot-bubble::after {
+    content: ""; position: absolute; left: -7px; top: 50%; transform: translateY(-50%);
+    border-width: 6px 8px 6px 0; border-style: solid;
+    border-color: transparent #fff transparent transparent;
+  }
+  .fC_pose-pop { animation: fujiPop 0.45s cubic-bezier(.34,1.56,.64,1); }
+  @keyframes fujiBob   { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-5px)} }
+  @keyframes fujiWiggle{ 0%,100%{transform:rotate(0)} 20%{transform:rotate(-10deg)} 40%{transform:rotate(8deg)} 60%{transform:rotate(-5deg)} 80%{transform:rotate(3deg)} }
+  @keyframes fujiPop   { 0%{transform:scale(.72) rotate(-6deg);opacity:.4} 60%{transform:scale(1.12)} 100%{transform:scale(1) rotate(0);opacity:1} }
+
+  /* growth avatar as ふじキュン */
+  img.fC_growth-avatar {
+    width: 56px; height: 56px; object-fit: contain;
+    background: rgba(255,255,255,0.92); border-radius: 50%; padding: 4px;
+    box-shadow: 0 0 14px rgba(255,215,0,0.4);
+  }
+  /* dialog avatar as ふじキュン */
+  img.fC_dialog-avatar {
+    width: 30px; height: 30px; object-fit: contain;
+    background: #fff; border-radius: 50%; padding: 2px; border: 1px solid #f1d4e0;
+  }
+  /* practice feedback icon as ふじキュン */
+  img.fC_prac-feedback-icon { width: 42px; height: 42px; object-fit: contain; flex-shrink: 0; }
+
+  /* ── Post-call report ── */
+  .fC_report {
+    margin-top: 0.9em; padding: 0.85em 1em;
+    background: linear-gradient(135deg, #fff0f5, #fce4ec);
+    border: 1.5px solid #f8bbd0; border-radius: var(--radius);
+    animation: fC_up 0.25s ease;
+  }
+  .fC_report[hidden] { display: none; }
+  .fC_report-q { font-size: 0.86rem; font-weight: 700; color: #880e4f; margin-bottom: 0.6em; line-height: 1.5; }
+  .fC_report-btns { display: flex; gap: 0.5em; }
+  .fC_report-btn {
+    flex: 1; min-height: 46px; border-radius: 10px; cursor: pointer;
+    font-family: inherit; font-size: 0.88rem; font-weight: 700;
+    -webkit-tap-highlight-color: transparent; transition: all var(--trans);
+  }
+  .fC_report-btn.good { background: var(--success); color: #fff; border: none; }
+  .fC_report-btn.soft { background: #fff; color: var(--accent); border: 2px solid var(--accent); }
+  .fC_report-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+
+  /* ── Heart burst FX ── */
+  #fC_fxLayer { position: fixed; inset: 0; pointer-events: none; z-index: 350; overflow: hidden; }
+  .fC_heart { position: absolute; font-size: 1.4rem; will-change: transform, opacity; animation: fujiHeart 1.5s ease-out forwards; }
+  @keyframes fujiHeart {
+    0%   { transform: translateY(0) scale(.6);  opacity: 0; }
+    20%  { opacity: 1; }
+    100% { transform: translateY(-130px) scale(1.2) rotate(18deg); opacity: 0; }
+  }
+
+  /* footer credit */
+  .fC_credit { display: block; margin-top: 0.45em; font-size: 0.64rem; color: var(--text-muted); opacity: 0.85; line-height: 1.4; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .fC_mascot-char, .fC_pose-pop, .fC_heart, .fC_report { animation: none !important; }
+  }
   </style>
 </head>
 <body>
@@ -860,9 +943,14 @@
 
   <!-- Mascot -->
   <div class="fC_mascot" role="note" aria-label="ふじキュン♡からのメッセージ">
-    <div class="fC_mascot-icon" aria-hidden="true">🌸</div>
-    <div class="fC_mascot-text" id="fC_mascotMsg" aria-live="polite">
-      やあ！ふじキュン♡だキュンよ♡ 電話前の緊張、一緒に解消しようね！通話相手と目的を教えてくれれば台本を作るキュンね♡
+    <button class="fC_mascot-char" id="fC_mascotChar" type="button" aria-label="ふじキュンをタップして話しかける">
+      <img class="fC_fuji-img" id="fC_mascotImg" src="assets/fujikyun/normal.png"
+           alt="ふじキュン♡" data-emoji="🌸" onerror="fujiImgErr(this,'🌸')">
+    </button>
+    <div class="fC_mascot-bubble">
+      <div class="fC_mascot-text" id="fC_mascotMsg" aria-live="polite">
+        やあ！ふじキュン♡だキュンよ♡ 電話前の緊張、一緒に解消しようね！下の質問にこたえてくれたら、ぴったりの台本を作るキュン♡
+      </div>
     </div>
   </div>
 
@@ -870,7 +958,7 @@
   <div class="fC_growth" id="fC_growth" aria-label="成長ステータス">
     <div class="fC_growth-top">
       <div class="fC_growth-left">
-        <div class="fC_growth-avatar" id="fC_avatar">🥚</div>
+        <img class="fC_growth-avatar" id="fC_avatar" src="assets/fujikyun/normal.png" alt="ふじキュン" data-emoji="🥚" onerror="fujiImgErr(this,'🥚')">
         <div>
           <div class="fC_growth-name" id="fC_lvName">でんわのたまご</div>
           <div class="fC_growth-sub"  id="fC_lvSub">台本0回達成</div>
@@ -906,6 +994,15 @@
       </div>
     </div>
 
+    <!-- Post-call report -->
+    <div class="fC_report" id="fC_report" hidden>
+      <div class="fC_report-q">📞 電話おわった？ どうだったか ふじキュン♡ に教えてね！</div>
+      <div class="fC_report-btns">
+        <button class="fC_report-btn good" type="button" data-rep="good">😊 できた！</button>
+        <button class="fC_report-btn soft" type="button" data-rep="nervous">😣 緊張した…</button>
+      </div>
+    </div>
+
     <!-- Practice panel -->
     <div class="fC_practice" id="fC_practice">
       <div class="fC_prac-header">
@@ -937,6 +1034,7 @@
 
 <footer class="fC_footer" role="contentinfo">
   ふじキュン♡ と一緒に、電話の不安をなくそうキュンね♡ &nbsp;|&nbsp; v3.0.0
+  <span class="fC_credit">イラスト：「キュンとするまち。藤沢」公式マスコットキャラクター ふじキュン♡ &copy;藤沢市</span>
 </footer>
 
 
@@ -951,6 +1049,9 @@
     <button class="fC_btn-secondary" id="fC_authCloseBtn" style="width:100%;margin-top:1em;min-height:44px;">閉じる</button>
   </div>
 </div>
+
+<!-- Heart burst FX layer -->
+<div id="fC_fxLayer" aria-hidden="true"></div>
 
 <!-- Toast container -->
 <div class="fC_toasts" id="fC_toasts" aria-live="assertive" aria-atomic="false" role="status"></div>
@@ -972,11 +1073,11 @@
 
   /* ── Level definitions ──────────────────────── */
   var LEVELS = [
-    { lv:1, min:0,  name:"でんわのたまご",   avatar:"🥚" },
-    { lv:2, min:5,  name:"でんわびと",        avatar:"🐣" },
-    { lv:3, min:15, name:"でんわファイター",  avatar:"⚡" },
-    { lv:4, min:30, name:"でんわ戦士",        avatar:"🔥" },
-    { lv:5, min:60, name:"でんわマスター",    avatar:"👑" },
+    { lv:1, min:0,  name:"はじめまして",   avatar:"🌱", pose:"normal"    },
+    { lv:2, min:5,  name:"顔なじみ",       avatar:"😊", pose:"happy"     },
+    { lv:3, min:15, name:"電話の相棒",     avatar:"📣", pose:"cheer"     },
+    { lv:4, min:30, name:"心の友",         avatar:"💕", pose:"love"      },
+    { lv:5, min:60, name:"無二の親友",     avatar:"🎊", pose:"celebrate" },
   ];
 
   /* ── Badge definitions ──────────────────────── */
@@ -1032,9 +1133,15 @@
     var nxt = null;
     for (var i = 0; i < LEVELS.length; i++) { if (LEVELS[i].lv === lv.lv + 1) { nxt = LEVELS[i]; break; } }
 
-    $("fC_avatar").textContent  = lv.avatar;
-    $("fC_lvName").textContent  = lv.name;
-    $("fC_lvSub").textContent   = "台本" + st.total + "回達成";
+    var av = $("fC_avatar");
+    if (av && av.tagName === "IMG") {
+      var fp = FUJI[lv.pose] || FUJI.normal;
+      if ((av.getAttribute("src") || "").indexOf(fp.img) < 0) av.src = fp.img;
+    } else if (av) {
+      av.textContent = lv.avatar;
+    }
+    $("fC_lvName").textContent  = "ふじキュンと " + lv.name;
+    $("fC_lvSub").textContent   = "いっしょに台本づくり " + st.total + "回";
     $("fC_lvBadge").textContent = "Lv." + lv.lv;
 
     if (nxt) {
@@ -1085,8 +1192,9 @@
       avatarEl.classList.add("leveling");
       setTimeout(function(){ avatarEl.classList.remove("leveling"); }, 700);
       setTimeout(function(){
-        toast("🎉 レベルアップ！ " + newLv.avatar + " " + newLv.name + " になったキュン！！", "success", 5000);
-        mascot("すごいキュン！！" + newLv.avatar + "「" + newLv.name + "」にレベルアップしたよ♡ どんどん電話の達人に近づいてるキュン！！");
+        toast("🎉 ふじキュンとの仲が深まった！ " + newLv.avatar + " 「" + newLv.name + "」に！！", "success", 5000);
+        mascot("すごいキュン！！ふじキュンとあなたは「" + newLv.name + "」になったよ♡ これからもいっしょに電話、がんばろうキュン！！", "celebrate");
+        burstHearts();
       }, 400);
     }
     newBadges.forEach(function(b, i) {
@@ -1195,6 +1303,98 @@
     pracClose:   $("fC_pracClose"),
   };
 
+  /* ── ふじキュン poses & reactions ────────────── */
+  var FUJI = {
+    normal:    { img: "assets/fujikyun/normal.png",    emoji: "🌸" },
+    think:     { img: "assets/fujikyun/think.png",     emoji: "💭" },
+    happy:     { img: "assets/fujikyun/happy.png",     emoji: "🙆" },
+    cheer:     { img: "assets/fujikyun/cheer.png",     emoji: "📣" },
+    listen:    { img: "assets/fujikyun/listen.png",    emoji: "🎤" },
+    celebrate: { img: "assets/fujikyun/celebrate.png", emoji: "🎉" },
+    love:      { img: "assets/fujikyun/love.png",      emoji: "💕" },
+    bow:       { img: "assets/fujikyun/bow.png",       emoji: "🙇" },
+    sparkle:   { img: "assets/fujikyun/sparkle.png",   emoji: "✨" },
+    surprise:  { img: "assets/fujikyun/surprise.png",  emoji: "😲" },
+  };
+
+  // 画像が読めなかった場合は絵文字へフォールバック
+  window.fujiImgErr = function (img, emoji) {
+    if (!img || !img.parentNode) return;
+    var span = document.createElement("span");
+    span.className = img.className + " fC_fuji-fallback";
+    span.textContent = emoji || img.getAttribute("data-emoji") || "🌸";
+    span.setAttribute("aria-hidden", "true");
+    img.parentNode.replaceChild(span, img);
+  };
+
+  function setFujiPose(pose) {
+    var f   = FUJI[pose] || FUJI.normal;
+    var img = $("fC_mascotImg");
+    if (!img || img.tagName !== "IMG") return;
+    if ((img.getAttribute("src") || "").indexOf(f.img) >= 0) return;
+    img.src = f.img;
+    img.classList.remove("fC_pose-pop");
+    void img.offsetWidth;
+    img.classList.add("fC_pose-pop");
+  }
+
+  var FUJI_TAPS = [
+    { m: "なでなで、うれしいキュン♡", p: "love" },
+    { m: "わわっ、びっくりしたキュン！でも元気でたキュン♡", p: "surprise" },
+    { m: "キラキラ〜✨ 今日もいい声、出していこキュン♡", p: "sparkle" },
+    { m: "電話、こわくないよ。ふじキュンがそばにいるキュン♡", p: "cheer" },
+    { m: "ふじキュンは「キュンとするまち。藤沢」からやってきたキュン♡", p: "happy" },
+    { m: "すぅ…はぁ…。いっしょに深呼吸キュン♡ だいじょうぶ！", p: "normal" },
+  ];
+
+  function fujiTap() {
+    var t = FUJI_TAPS[Math.floor(Math.random() * FUJI_TAPS.length)];
+    mascot(t.m, t.p);
+    var c = $("fC_mascotChar");
+    if (c) { c.classList.remove("fC_wiggle"); void c.offsetWidth; c.classList.add("fC_wiggle"); }
+    burstHearts();
+  }
+
+  function burstHearts() {
+    var layer = $("fC_fxLayer");
+    var char  = $("fC_mascotChar");
+    if (!layer || !char) return;
+    var r  = char.getBoundingClientRect();
+    var cx = r.left + r.width / 2;
+    var cy = r.top  + r.height / 2;
+    var hs = ["💕", "💖", "✨", "💗", "🩷", "💞"];
+    for (var i = 0; i < 6; i++) {
+      var h = document.createElement("span");
+      h.className   = "fC_heart";
+      h.textContent = hs[i % hs.length];
+      h.style.left  = (cx + (Math.random() * 50 - 25)) + "px";
+      h.style.top   = (cy + (Math.random() * 16 - 8)) + "px";
+      h.style.animationDelay = (i * 0.06) + "s";
+      layer.appendChild(h);
+      (function (el) { setTimeout(function () { el.remove(); }, 1700); })(h);
+    }
+  }
+
+  /* ── Post-call report ────────────────────────── */
+  function showReport() { var r = $("fC_report"); if (r) r.hidden = false; }
+  function hideReport() { var r = $("fC_report"); if (r) r.hidden = true; }
+  function handleReport(kind) {
+    hideReport();
+    if (kind === "good") {
+      mascot("やったーキュン！！🎉 あなたなら出来ると思ってたキュン♡ ほんとにえらい！", "celebrate");
+      toast("🎉 おつかれさま！よくがんばったキュン♡", "success", 4500);
+      burstHearts();
+    } else {
+      mascot("緊張したんだね、よくがんばったキュン♡ 電話できただけで百点満点キュン！次は🎤音読練習で声をならすと、もっと自信がつくキュン♡", "love");
+      toast("💕 緊張しても大丈夫。えらかったキュン♡", "success", 4500);
+    }
+  }
+  function afterCopy() {
+    mascot("コピーできたキュン♡ 深呼吸して、いってらっしゃい！", "bow");
+    burstHearts();
+    showReport();
+  }
+
   /* ── Toast ──────────────────────────────────── */
   function toast(msg, type, ms) {
     ms = ms || 3500;
@@ -1225,7 +1425,7 @@
   }
 
   /* ── Mascot ─────────────────────────────────── */
-  function mascot(msg) { D.mascot.textContent = msg; }
+  function mascot(msg, pose) { D.mascot.textContent = msg; if (pose) setFujiPose(pose); }
 
   /* ── Loading state ──────────────────────────── */
   function setLoading(on) {
@@ -1315,7 +1515,8 @@
       toast("📝 電話の目的を入力してね♡", "warning");
       return;
     }
-    mascot(preGenMsg());
+    mascot(preGenMsg(), "think");
+    hideReport();
     setLoading(true);
 
     if (S.demoMode) {
@@ -1334,6 +1535,7 @@
         var result = recordCall(S.callerType, S.keigoLevel);
         var msg    = postGenMsg(result.leveled);
         if (msg) mascot(msg);
+        setFujiPose(result.leveled ? "celebrate" : "happy");
         toast("🎮 デモ台本ができたキュン♡（サンプル）", "success");
         initFollowUp();
         setTimeout(function () {
@@ -1359,6 +1561,7 @@
         var result = recordCall(S.callerType, S.keigoLevel);
         var msg    = postGenMsg(result.leveled);
         if (msg) mascot(msg);
+        setFujiPose(result.leveled ? "celebrate" : "happy");
         toast("✨ 台本ができたキュン♡", "success");
         initFollowUp();
         setTimeout(function () {
@@ -1367,7 +1570,7 @@
       })
       .catch(function (err) {
         toast(errMsg(err), "error", 5500);
-        mascot("うまくいかなかったキュン…💦 エラーの内容を確認してもう一度試してね♡");
+        mascot("うまくいかなかったキュン…💦 エラーの内容を確認してもう一度試してね♡", "love");
       })
       .finally(function () { setLoading(false); });
   }
@@ -1377,7 +1580,7 @@
     if (!S.script) return;
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(S.script)
-        .then(function () { toast("📋 コピーできたキュン♡ いつでも使ってね！", "success"); })
+        .then(function () { toast("📋 コピーできたキュン♡ いつでも使ってね！", "success"); afterCopy(); })
         .catch(fallbackCopy);
     } else {
       fallbackCopy();
@@ -1393,6 +1596,7 @@
     try {
       document.execCommand("copy");
       toast("📋 コピーできたキュン♡", "success");
+      afterCopy();
     } catch (_) {
       toast("😅 コピーできなかったキュン… 手動でコピーしてね♡", "error");
     }
@@ -1459,6 +1663,14 @@
   D.copyBtn.addEventListener("click",  copyScript);
   D.printBtn.addEventListener("click", function () { buildPrintDoc(); window.print(); });
 
+  var _mascotChar = $("fC_mascotChar");
+  if (_mascotChar) _mascotChar.addEventListener("click", fujiTap);
+  var _reportEl = $("fC_report");
+  if (_reportEl) _reportEl.addEventListener("click", function (e) {
+    var b = e.target.closest("[data-rep]");
+    if (b) handleReport(b.dataset.rep);
+  });
+
   $("fC_cloudBtn").addEventListener("click", openAuthModal);
   $("fC_authCloseBtn").addEventListener("click", closeAuthModal);
   $("fC_authModal").addEventListener("click", function(e) {
@@ -1478,7 +1690,7 @@
     D.recBtn.style.display   = "";
     D.practice.classList.add("visible");
     D.practice.scrollIntoView({ behavior: "smooth", block: "nearest" });
-    mascot("台本を見ながら声に出して読んでキュン♡ 録音ボタンを押して始めてね！");
+    mascot("台本を見ながら声に出して読んでキュン♡ 録音ボタンを押して始めてね！", "listen");
   }
 
   function toggleRecording() {
@@ -1500,7 +1712,7 @@
       D.recBtn.textContent = "⏹ 録音停止";
       D.recBtn.classList.add("recording");
       D.recStatus.innerHTML = '<span class="fC_rec-dot"></span> 録音中...';
-      mascot("録音中キュン♡ 台本を声に出して読んでね！終わったら停止を押してキュン！");
+      mascot("録音中キュン♡ 台本を声に出して読んでね！終わったら停止を押してキュン！", "listen");
     }).catch(function() {
       toast("🎤 マイクが使えないキュン… ブラウザの設定でマイクを許可してね♡", "error", 5000);
     });
@@ -1514,7 +1726,7 @@
       D.recBtn.classList.remove("recording");
       D.recBtn.disabled    = true;
       D.recStatus.textContent = "";
-      mascot("ちょっと待ってキュン♡ ふじキュンが声を分析してるよ〜！");
+      mascot("ちょっと待ってキュン♡ ふじキュンが声を分析してるよ〜！", "think");
     }
   }
 
@@ -1627,7 +1839,7 @@
         null,
         "デモモードでも上手く読めてたキュン♡ 声もはっきりしていて、きっと相手にしっかり伝わるよ！本番でも自信を持って電話してキュン♡"
       );
-      mascot("練習お疲れ様キュン♡ いい感じだったよ！本番でも大丈夫キュン！");
+      mascot("練習お疲れ様キュン♡ いい感じだったよ！本番でも大丈夫キュン！", "happy");
       return;
     }
     var feedbackPrompt = [
@@ -1651,7 +1863,7 @@
     var feedbackCall = callGroqProxy(feedbackPrompt);
     feedbackCall.then(function(feedback) {
       showPracticeResult(transcript, scores, feedback);
-      mascot(feedback.replace(/\n/g, " ").slice(0, 60) + "♡");
+      mascot(feedback.replace(/\n/g, " ").slice(0, 60) + "♡", "happy");
     }).catch(function() {
       showPracticeResult(transcript, scores, "よく読めてたキュン♡ この調子で電話してみてね！");
     });
@@ -1671,7 +1883,7 @@
       : "";
 
     D.pracResult.innerHTML =
-      '<div class="fC_prac-feedback"><div class="fC_prac-feedback-icon">🌸</div><div class="fC_prac-feedback-text">' + escHtml(feedback) + '</div></div>'
+      '<div class="fC_prac-feedback"><img class="fC_prac-feedback-icon" src="assets/fujikyun/love.png" alt="ふじキュン" data-emoji="🌸" onerror="fujiImgErr(this,\'🌸\')"><div class="fC_prac-feedback-text">' + escHtml(feedback) + '</div></div>'
       + scoresHTML + transcriptHTML
       + '<div class="fC_prac-btns">'
       + '<button class="fC_act-btn" id="fC_rerecBtn">🎤 もう一回練習</button>'
@@ -1685,11 +1897,11 @@
       D.recBtn.style.display = "";
       D.recBtn.textContent   = "🎤 録音開始";
       D.recBtn.disabled      = false;
-      mascot("もう一回練習するキュン♡ 今度はさらに自信を持って読んでみてね！");
+      mascot("もう一回練習するキュン♡ 今度はさらに自信を持って読んでみてね！", "listen");
     });
     $("fC_callNowBtn").addEventListener("click", function() {
       D.practice.classList.remove("visible");
-      mascot("いってらっしゃいキュン！！🔥 練習バッチリだから絶対大丈夫キュン♡");
+      mascot("いってらっしゃいキュン！！🔥 練習バッチリだから絶対大丈夫キュン♡", "cheer");
       toast("💪 練習完了！自信を持って電話してキュン♡", "success", 4000);
     });
   }
@@ -2086,7 +2298,7 @@
     var bubble = '<div class="fC_dialog-bubble">' + escHtml(text) + '</div>';
     row.innerHTML = isUser
       ? bubble
-      : '<span class="fC_dialog-avatar" aria-hidden="true">🌸</span>' + bubble;
+      : '<img class="fC_dialog-avatar" src="assets/fujikyun/normal.png" alt="ふじキュン" aria-hidden="true" data-emoji="🌸" onerror="fujiImgErr(this,\'🌸\')">' + bubble;
     chat.appendChild(row);
     dlgScrollBottom();
   }
@@ -2166,7 +2378,8 @@
 
     openDialog();
 
-    mascot(preGenMsg());
+    mascot(preGenMsg(), "think");
+    hideReport();
     setLoading(true);
 
     var apiCall = S.demoMode
@@ -2190,6 +2403,7 @@
         var result = recordCall(S.callerType, S.keigoLevel);
         var msg    = postGenMsg(result.leveled);
         if (msg) mascot(msg);
+        setFujiPose(result.leveled ? "celebrate" : "happy");
         toast("✨ 台本ができたキュン♡", "success");
         initFollowUp();
         setTimeout(function() {
@@ -2198,7 +2412,7 @@
       })
       .catch(function(err) {
         toast(errMsg(err), "error", 5500);
-        mascot("うまくいかなかったキュン…💦 もう一度試してね♡");
+        mascot("うまくいかなかったキュン…💦 もう一度試してね♡", "love");
       })
       .finally(function() { setLoading(false); });
   }
@@ -2300,9 +2514,11 @@
   }
 
   function generateFollowUp(scenario, chain, resultEl, panel) {
-    resultEl.innerHTML = '<div style="padding:0.5em 0;color:var(--text-muted);font-size:0.85rem;">🌸 考えてるキュン…</div>';
+    resultEl.innerHTML = '<div style="padding:0.5em 0;color:var(--text-muted);font-size:0.85rem;">💭 考えてるキュン…</div>';
+    setFujiPose("think");
     callWithRetry(buildFollowUpPrompt(scenario, chain))
       .then(function(text) {
+        setFujiPose("happy");
         text = text.trim();
         var newChain = chain.concat([{ label: scenario.icon + " " + scenario.label, script: text }]);
         var card = document.createElement("div");
@@ -2348,9 +2564,19 @@
     initSupabase();
     var st = loadStats();
     var lv = getLevel(st.total);
+    var daily = [
+      "今日も電話、いっしょにがんばろうね！",
+      "まずは深呼吸から。ふじキュンがそばにいるキュン♡",
+      "きょうの一歩、えらいキュン♡ いっしょに台本つくろう！",
+      "電話の前のドキドキ、ふじキュンが半分もらうキュン♡ だいじょうぶ！",
+      "あなたのペースでいこうキュン♡ ゆっくり、はっきりでオッケー！",
+    ];
+    var d   = new Date();
+    var dl  = daily[(d.getFullYear() * 372 + d.getMonth() * 31 + d.getDate()) % daily.length];
     mascot(st.total === 0
-      ? "やあ！ふじキュン♡だキュンよ♡ 電話前の緊張、一緒に解消しようね！"
-      : lv.avatar + " " + lv.name + "のあなた！今日も一緒に頑張るキュン♡");
+      ? "はじめまして♡ ふじキュンだキュン！電話前の緊張、いっしょに解消しようね。下の質問にこたえてくれたら、ぴったりの台本を作るキュン♡"
+      : "「ふじキュンと " + lv.name + "」のあなた、おかえりキュン♡ " + dl,
+      "cheer");
     openDialog();
   }
 
