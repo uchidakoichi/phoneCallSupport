@@ -864,6 +864,39 @@
   .fC_report-btn.soft { background: #fff; color: var(--accent-deep); border: 2px solid var(--accent); }
   .fC_report-btn:hover { opacity: 0.9; transform: translateY(-1px); }
 
+  /* ── 敬語の微調整チップ ── */
+  .fC_tone-adjust { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4em; margin-top: 0.6em; }
+  .fC_tone-adjust-label { font-size: 0.72rem; color: var(--text-muted); }
+  .fC_tone-chip {
+    background: #fff; border: 1.5px solid var(--border); border-radius: 18px;
+    padding: 0.3em 0.85em; min-height: 44px; font-size: 0.78rem; cursor: pointer;
+    font-family: inherit; color: var(--primary-text); -webkit-tap-highlight-color: transparent;
+    transition: border-color var(--trans), background var(--trans);
+  }
+  .fC_tone-chip:hover { border-color: var(--primary); background: var(--primary-light); }
+
+  /* ── 生成後アドバイス（不安なところ） ── */
+  .fC_advice { margin-top: 0.9em; }
+  .fC_advice[hidden] { display: none; }
+  .fC_advice-q { font-size: 0.82rem; font-weight: 700; color: var(--accent-deep); margin-bottom: 0.5em; line-height: 1.5; }
+  .fC_advice-chips { display: flex; flex-wrap: wrap; gap: 0.38em; }
+  .fC_advice-chip {
+    background: #fff; border: 1.5px solid var(--border); border-radius: 22px;
+    padding: 0.4em 0.9em; min-height: 44px; font-size: 0.8rem; cursor: pointer;
+    font-family: inherit; color: var(--text); -webkit-tap-highlight-color: transparent;
+    transition: border-color var(--trans), background var(--trans);
+  }
+  .fC_advice-chip:hover:not(:disabled) { border-color: var(--accent); background: var(--accent-light); color: var(--accent-deep); }
+  .fC_advice-chip:disabled { opacity: 0.5; cursor: not-allowed; }
+  .fC_advice-card {
+    display: flex; gap: 0.6em; align-items: flex-start;
+    background: linear-gradient(135deg, #f5f0fc, #ede7f6);
+    border: 1px solid #d1c4e9; border-radius: var(--radius);
+    padding: 0.8em; margin-top: 0.6em; animation: fC_up 0.25s ease;
+  }
+  .fC_advice-card img { width: 40px; height: 40px; object-fit: contain; flex-shrink: 0; }
+  .fC_advice-card-text { font-size: 0.85rem; line-height: 1.65; color: #4527a0; white-space: pre-wrap; }
+
   /* ── Heart / confetti burst FX ── (below the modal overlay so bursts never cover a dialog) */
   #fC_fxLayer { position: fixed; inset: 0; pointer-events: none; z-index: 150; overflow: hidden; }
   .fC_heart { position: absolute; font-size: 1.4rem; will-change: transform, opacity; animation: fujiHeart 1.5s ease-out forwards; }
@@ -894,7 +927,8 @@
   /* ── Press feedback on tappable controls (mobile has no :hover) ── */
   .fC_act-btn:active, .fC_dialog-opt:active, .fC_dialog-next:active, .fC_dialog-gen:active,
   .fC_followup-chip:active:not(:disabled), .fC_report-btn:active, .fC_btn-primary:active, .fC_btn-secondary:active,
-  .fC_rec-btn:active:not(:disabled), .fC_icon-btn:active, .fC_hist-item:active, .fC_dialog-skip:active {
+  .fC_rec-btn:active:not(:disabled), .fC_icon-btn:active, .fC_hist-item:active, .fC_dialog-skip:active,
+  .fC_advice-chip:active:not(:disabled), .fC_tone-chip:active {
     transform: scale(0.96);
     transition: transform 0.08s ease;
   }
@@ -904,7 +938,7 @@
 
   @media (prefers-reduced-motion: reduce) {
     .fC_mascot-char, .fC_mascot-char.fC_wiggle, .fC_pose-pop, .fC_heart, .fC_confetti,
-    .fC_report, .fC_revealing, .fC_badge.earned, .fC_growth-avatar.leveling,
+    .fC_report, .fC_advice-card, .fC_revealing, .fC_badge.earned, .fC_growth-avatar.leveling,
     .fC_rec-btn.recording, .fC_rec-dot, .fC_modal, .fC_toast, .fC_dots i {
       animation: none !important;
     }
@@ -984,6 +1018,24 @@
         <button class="fC_act-btn fC_act-btn--practice"  id="fC_practiceBtn" aria-label="音読練習モードを開く">🎤 音読練習</button>
         <button class="fC_act-btn fC_act-btn--print"     id="fC_printBtn"    aria-label="台本を印刷する" title="印刷">🖨️ 印刷</button>
       </div>
+      <div class="fC_tone-adjust" id="fC_toneAdjust">
+        <span class="fC_tone-adjust-label">敬語を調整：</span>
+        <button class="fC_tone-chip" type="button" data-dir="1">🙇 もっと丁寧に</button>
+        <button class="fC_tone-chip" type="button" data-dir="-1">😊 やわらかく</button>
+      </div>
+    </div>
+
+    <!-- Pre-call advice (別枠の励まし＋コツ) -->
+    <div class="fC_advice" id="fC_advice" hidden>
+      <div class="fC_advice-q">💭 この電話で不安なところはある？ ふじキュン♡ がコツを教えるよ</div>
+      <div class="fC_advice-chips">
+        <button class="fC_advice-chip" type="button" data-concern="断られそう・嫌がられそうで不安">😰 断られそう</button>
+        <button class="fC_advice-chip" type="button" data-concern="説明が複雑でうまく伝わるか不安">🤔 説明が複雑</button>
+        <button class="fC_advice-chip" type="button" data-concern="緊張して言葉が詰まりそう">💦 緊張しそう</button>
+        <button class="fC_advice-chip" type="button" data-concern="話の切り出し方がわからない">📋 切り出し方</button>
+        <button class="fC_advice-chip" type="button" data-concern="特に心配はない">😊 特にない</button>
+      </div>
+      <div id="fC_adviceResult" role="status" aria-live="polite"></div>
     </div>
 
     <!-- Post-call report -->
@@ -1240,6 +1292,7 @@
     script:     "",
     history:    [],
     lastPrompt: "",
+    genCtx:     null,   // 直近生成の {freeText, clarifyPairs, tone}（敬語微調整の再生成に使用）
   };
 
   /* ── DOM helpers ────────────────────────────── */
@@ -1604,6 +1657,7 @@
     if (!result.leveled) sfx("success");   // レベルアップ時は専用ファンファーレに任せる
     toast("✨ 台本ができたキュン♡", "success");
     initFollowUp();
+    showAdvice();
     setTimeout(function () {
       D.result.scrollIntoView({ behavior: "smooth", block: "nearest" });
       focusScript();
@@ -1621,7 +1675,7 @@
   function generate() {
     var prompt = S.lastPrompt || buildPrompt();
     mascot(preGenMsg(), "think");
-    hideReport();
+    hideReport(); hideAdvice();
     setLoading(true);
     showThinking();
     callWithRetry(prompt)
@@ -1697,10 +1751,12 @@
     S.callerType = h.callerType;
     S.keigoLevel = h.keigoLevel;
     S.lastPrompt = "";          // 「作り直す」は読み込んだ履歴の条件から組み直す
+    S.genCtx     = null;        // 履歴には dialog 文脈が無い → 敬語調整は S.keigoLevel ベースに
     renderScriptBox(h.script);
     D.result.classList.add("visible");
     revealEl(D.result);
     hideReport();
+    hideAdvice();
     initFollowUp();
     toast("📜 履歴から読み込んだキュン♡", "success");
     D.result.scrollIntoView({ behavior: "smooth", block: "nearest" });
@@ -1731,6 +1787,17 @@
   if (_reportEl) _reportEl.addEventListener("click", function (e) {
     var b = e.target.closest("[data-rep]");
     if (b) handleReport(b.dataset.rep);
+  });
+
+  var _toneAdjust = $("fC_toneAdjust");
+  if (_toneAdjust) _toneAdjust.addEventListener("click", function (e) {
+    var b = e.target.closest("[data-dir]");
+    if (b) adjustTone(Number(b.dataset.dir));
+  });
+  var _adviceEl = $("fC_advice");
+  if (_adviceEl) _adviceEl.addEventListener("click", function (e) {
+    var b = e.target.closest("[data-concern]");
+    if (b && !b.disabled) handleConcern(b.dataset.concern, b);
   });
 
   var _soundBtn = $("fC_soundBtn");
@@ -2345,96 +2412,157 @@
     } catch(e) { console.error("[FujiCall push stats]", e); }
   }
 
-  /* ── Dialog Q&A Mode ─────────────────────────── */
-  var DIALOG_QS = [
-    {
-      id: "situation",
-      q: "どんな場面での電話キュン？",
-      type: "options",
-      opts: [
-        { v: "external",  l: "🌐 取引先・社外への連絡" },
-        { v: "internal",  l: "🏢 社内・部署間の連絡" },
-        { v: "first",     l: "🌱 初めてかける相手への連絡" },
-        { v: "apology",   l: "🙇 謝罪・お詫びが必要な連絡" },
-      ],
-    },
-    {
-      id: "purpose",
-      q: "電話の目的を一言で教えてキュン♡\n（短くてOKだよ！）",
-      type: "text",
-      ph: "例：来週の打ち合わせの日程変更をお願いしたい",
-    },
-    {
-      id: "difficulty",
-      q: "難しいと感じる点はある？",
-      type: "options",
-      opts: [
-        { v: "fear_rejection", l: "😰 断られそう・嫌がられそう" },
-        { v: "fear_explain",   l: "🤔 説明が複雑でうまく伝わるか不安" },
-        { v: "fear_nervous",   l: "💦 緊張して言葉が詰まりそう" },
-        { v: "fear_start",     l: "📋 話の切り出し方がわからない" },
-        { v: "no_fear",        l: "😊 特に心配はない" },
-      ],
-    },
-    {
-      id: "tone",
-      q: "どんな話し方で電話したい？",
-      type: "options",
-      opts: [
-        { v: "humble",   l: "🙇 かなり丁寧・謙虚に" },
-        { v: "standard", l: "👔 一般的なビジネストーンで" },
-        { v: "friendly", l: "😊 少し柔らかく・フレンドリーに" },
-      ],
-    },
+  /* ── Q&A: 自由記述 → AIが不足だけ質問 → 敬語調整 ── */
+  var TONE_MAP = {
+    humble:   "謙譲語を多用した非常に丁寧な敬語（最も丁寧）",
+    standard: "一般的な丁寧語・敬語（標準的なビジネス電話）",
+    friendly: "親しい相手向けの少し柔らかい口調（丁寧だが砕けすぎない）",
+  };
+  var TONE_OPTS  = [
+    { v: "humble",   l: "🙇 かなり丁寧・謙虚に" },
+    { v: "standard", l: "👔 一般的なビジネストーンで" },
+    { v: "friendly", l: "😊 少し柔らかく・フレンドリーに" },
+  ];
+  var TONE_ORDER = ["friendly", "standard", "humble"]; // やわらかい→丁寧
+  function toneLabel(v) { for (var i = 0; i < TONE_OPTS.length; i++) if (TONE_OPTS[i].v === v) return TONE_OPTS[i].l; return v; }
+
+  // AI質問が取れなかった場合の最小フォールバック
+  var FALLBACK_QS = [
+    { q: "お相手は社内の方？ 社外の方？",       options: ["社内の人", "社外の人"] },
+    { q: "その相手に電話するのは初めてキュン？", options: ["初めて", "何度かある・知っている"] },
   ];
 
-  var _dlgAnswers = {};
-  var _dlgStep    = 0;
+  var _freeText     = "";
+  var _clarifyQs    = [];   // [{q, options:[...]}]
+  var _clarifyPairs = [];   // [{q, a}]
+  var _clarifyIdx   = 0;
+  var _dlgTone      = "standard";
 
   function openDialog() {
-    _dlgAnswers = {};
-    _dlgStep    = 0;
+    _freeText = ""; _clarifyQs = []; _clarifyPairs = []; _clarifyIdx = 0; _dlgTone = "standard";
     $("fC_dialogChat").innerHTML = "";
     $("fC_dialogStep").innerHTML = "";
-    setTimeout(renderDlgStep, 80);
+    setTimeout(renderDescribeStep, 80);
   }
 
-  function renderDlgStep() {
-    var q = DIALOG_QS[_dlgStep];
-    if (!q) { dlgFinish(); return; }
-
-    appendDlgMsg(false, q.q);
-    var progress = '<div class="fC_dialog-progress">' + (_dlgStep + 1) + ' / ' + DIALOG_QS.length + '</div>';
+  function _dlgGroup(label) {
     var step = $("fC_dialogStep");
     step.setAttribute("role", "group");
-    step.setAttribute("aria-label", q.q.replace(/\n/g, " ") + "（質問 " + (_dlgStep + 1) + " / " + DIALOG_QS.length + "）");
+    step.setAttribute("aria-label", label.replace(/\n/g, " "));
+    return step;
+  }
 
-    if (q.type === "options") {
-      step.innerHTML = progress + '<div class="fC_dialog-step-opts">'
-        + q.opts.map(function(o) {
-            return '<button class="fC_dialog-opt" data-dlgopt="' + escHtml(o.v) + '">' + escHtml(o.l) + '</button>';
-          }).join("")
-        + '</div>';
-      // スクリーンリーダー/キーボード操作のため最初の選択肢へフォーカスを移す
-      setTimeout(function() { var first = step.querySelector(".fC_dialog-opt"); if (first) first.focus(); }, 90);
-    } else {
-      step.innerHTML = progress
-        + '<div class="fC_dialog-text-area">'
-        + '<textarea class="fC_dialog-ta" id="fC_dlgTa" placeholder="' + escHtml(q.ph || "") + '" rows="3"></textarea>'
-        + '<div class="fC_dialog-ta-row">'
-        + '<button class="fC_dialog-skip" id="fC_dlgSkip">スキップ</button>'
-        + '<button class="fC_dialog-next" id="fC_dlgNext">次へ →</button>'
-        + '</div></div>';
-      setTimeout(function() { var el = $("fC_dlgTa"); if (el) el.focus(); }, 80);
-      $("fC_dlgNext").addEventListener("click", function() {
-        var val = (($("fC_dlgTa") || {}).value || "").trim();
-        if (!val) { toast("📝 入力してキュン♡", "warning"); return; }
-        dlgAdvance(DIALOG_QS[_dlgStep].id, val, val);
-      });
-      $("fC_dlgSkip").addEventListener("click", function() {
-        dlgAdvance(DIALOG_QS[_dlgStep].id, "", "（スキップ）");
-      });
+  // Stage 1: 自由記述
+  function renderDescribeStep() {
+    appendDlgMsg(false, "どんな電話をかけるキュン？ 目的や状況を、思いつくままで教えてね♡\n（例：取引先に納期遅れのお詫びと、新しい納期の相談）");
+    var step = _dlgGroup("電話の内容を自由に入力");
+    step.innerHTML =
+      '<div class="fC_dialog-text-area">'
+      + '<textarea class="fC_dialog-ta" id="fC_dlgTa" placeholder="例：取引先に納期遅れのお詫びと、新しい納期の相談" rows="3"></textarea>'
+      + '<div class="fC_dialog-ta-row" style="justify-content:flex-end;">'
+      + '<button class="fC_dialog-next" id="fC_dlgNext">次へ →</button>'
+      + '</div></div>';
+    setTimeout(function() { var el = $("fC_dlgTa"); if (el) el.focus(); }, 80);
+    $("fC_dlgNext").addEventListener("click", submitDescribe);
+    dlgScrollBottom();
+  }
+
+  function submitDescribe() {
+    var val = (($("fC_dlgTa") || {}).value || "").trim();
+    if (!val) { toast("📝 ひとことでも書いてくれると助かるキュン♡", "warning"); return; }
+    _freeText = val;
+    appendDlgMsg(true, val);
+    sfx("tap"); haptic(8);
+    var step = $("fC_dialogStep");
+    step.setAttribute("role", "status");
+    step.setAttribute("aria-label", "ふじキュンが内容を読んでいます");
+    step.setAttribute("tabindex", "-1");
+    step.innerHTML = '<div style="padding:0.4em 0;color:var(--text-muted);font-size:0.85rem;">💭 ふじキュンが内容を読んでるキュン <span class="fC_dots" aria-hidden="true"><i></i><i></i><i></i></span></div>';
+    try { step.focus({ preventScroll: true }); } catch (_) {}
+    setFujiPose("think");
+    fetchClarify(val).then(function(qs) {
+      _clarifyQs  = (qs == null) ? FALLBACK_QS : qs;   // null=失敗→固定質問 / []=AIが「質問不要」→敬語へ
+      _clarifyIdx = 0;
+      setFujiPose("normal");
+      renderClarifyStep();
+    });
+  }
+
+  // 自由記述から「不足している項目」だけを Groq に質問してもらう（失敗/遅延は null→フォールバック）
+  function fetchClarify(text) {
+    var prompt = [
+      "あなたは電話台本づくりの聞き取りアシスタントです。",
+      "ユーザーの自由記述を読み、良い電話台本を作るのに『まだ分からない・曖昧な』点だけを最小限の質問にしてください。",
+      "記述からすでに分かることは絶対に質問しないこと。質問は最大3つまで。",
+      "敬語・話し方（トーン）については質問しないこと（別の手順で聞きます）。",
+      "通話相手が社内か社外か記述から判断できない場合は、必ず最初の質問に含めること。",
+      "各質問には必ず2〜4個の短い選択肢を文字列で付けること。",
+      "",
+      "【ユーザーの記述】",
+      text,
+      "",
+      "出力は次の形式のJSONのみ。前後に説明文やコードブロックを付けないこと:",
+      '{"questions":[{"q":"質問文","options":["選択肢1","選択肢2"]}]}',
+      "不足が無ければ {\"questions\":[]} を返すこと。",
+    ].join("\n");
+    var call = callGroqProxy(prompt)
+      .then(function(txt) { return parseClarify(txt); })
+      .catch(function(e) { console.error("[FujiCall clarify]", e); return null; });
+    var timeout = new Promise(function(resolve) { setTimeout(function(){ resolve(null); }, 12000); });
+    return Promise.race([call, timeout]);   // 応答が来なくてもフォールバックへ抜ける
+  }
+
+  // モデルが前置き/コードフェンス/余分な括弧を付けても questions を取り出す。選択肢は文字列へ正規化
+  function parseClarify(txt) {
+    txt = String(txt || "").replace(/```json|```/g, "");
+    var candidates = [];
+    var m = txt.match(/\{[\s\S]*?"questions"[\s\S]*\}/);
+    if (m) candidates.push(m[0]);
+    candidates.push(txt);
+    for (var i = 0; i < candidates.length; i++) {
+      try {
+        var obj = JSON.parse(candidates[i]);
+        if (!obj || !("questions" in obj)) continue;
+        var out = [];
+        (obj.questions || []).slice(0, 3).forEach(function(q) {
+          if (!q || !q.q || !q.options || !q.options.length) return;
+          var opts = q.options.map(function(o) {
+            return typeof o === "string" ? o : (o && (o.label || o.l || o.text || o.value));
+          }).filter(function(o) { return typeof o === "string" && o.trim(); });
+          if (opts.length) out.push({ q: String(q.q), options: opts.slice(0, 4) });
+        });
+        return out;   // questions あり（空配列も「質問不要」として尊重）
+      } catch (e) {}
     }
+    console.error("[FujiCall clarify parse] no valid JSON");
+    return null;
+  }
+
+  // Stage 2: AIの不足質問（1問ずつ）
+  function renderClarifyStep() {
+    if (_clarifyIdx >= _clarifyQs.length) { renderToneStep(); return; }
+    var q = _clarifyQs[_clarifyIdx];
+    appendDlgMsg(false, q.q);
+    var step = _dlgGroup(q.q);
+    step.innerHTML = '<div class="fC_dialog-step-opts">'
+      + q.options.map(function(o, i) {
+          return '<button class="fC_dialog-opt" data-clar="' + i + '">' + escHtml(o) + '</button>';
+        }).join("")
+      + '</div>';
+    setTimeout(function() { var f = step.querySelector(".fC_dialog-opt"); if (f) f.focus(); }, 90);
+    dlgScrollBottom();
+  }
+
+  // Stage 3: 敬語レベル（最後）
+  function renderToneStep() {
+    appendDlgMsg(false, "最後に、どんな話し方にするキュン？");
+    var step = _dlgGroup("敬語レベルを選ぶ");
+    step.innerHTML = '<div class="fC_dialog-step-opts">'
+      + TONE_OPTS.map(function(o) {
+          return '<button class="fC_dialog-opt" data-tone="' + escHtml(o.v) + '">' + escHtml(o.l) + '</button>';
+        }).join("")
+      + '</div>';
+    setTimeout(function() { var f = step.querySelector(".fC_dialog-opt"); if (f) f.focus(); }, 90);
     dlgScrollBottom();
   }
 
@@ -2455,16 +2583,14 @@
     setTimeout(function() { chat.scrollTop = chat.scrollHeight; }, 60);
   }
 
-  function dlgAdvance(qId, value, label) {
-    _dlgAnswers[qId] = value;
-    appendDlgMsg(true, label);
-    _dlgStep++;
-    $("fC_dialogStep").innerHTML = "";
-    setTimeout(renderDlgStep, 220);
+  function _flashOpt(el) {
+    el.style.borderColor = "var(--primary)";
+    el.style.background  = "var(--primary-light)";
+    sfx("tap"); haptic(8);
   }
 
   function dlgFinish() {
-    appendDlgMsg(false, "ありがとキュン♡ 内容がわかったよ！ぴったりな台本を作るね✨");
+    appendDlgMsg(false, "ありがとキュン♡ 内容バッチリ！ぴったりな台本を作るね✨");
     $("fC_dialogStep").innerHTML =
       '<div style="padding:0.5em 0 0;">'
       + '<button class="fC_dialog-gen" id="fC_dlgGenBtn">✨ 台本を作ってキュン♡</button>'
@@ -2473,72 +2599,122 @@
     $("fC_dlgGenBtn").addEventListener("click", generateFromDialog);
   }
 
-  function buildDialogPrompt() {
-    var situationMap = {
-      external: "社外・取引先の相手",
-      internal: "社内・部署間の相手",
-      first:    "初めて電話する相手（社外）",
-      apology:  "謝罪・お詫びが必要な状況（社外）",
-    };
-    var difficultyMap = {
-      fear_rejection: "相手に断られる可能性に配慮した、柔らかく丁寧な切り出しにすること",
-      fear_explain:   "複雑な内容をわかりやすくシンプルな言葉で伝える構成にすること",
-      fear_nervous:   "緊張しても詰まらないよう、短い文で読みやすい構成にすること",
-      fear_start:     "話の切り出しを特に丁寧に、スムーズに本題に入れる構成にすること",
-      no_fear:        "",
-    };
-    var toneMap = {
-      humble:   "謙譲語を多用した非常に丁寧な敬語（最も丁寧）",
-      standard: "一般的な丁寧語・敬語（標準的なビジネス電話）",
-      friendly: "社内の親しい同僚向けの少し柔らかい口調（丁寧だが砕けすぎない）",
-    };
-
-    var situation  = _dlgAnswers.situation  || "external";
-    var purpose    = _dlgAnswers.purpose    || "ご用件の確認";
-    var difficulty = _dlgAnswers.difficulty || "no_fear";
-    var tone       = _dlgAnswers.tone       || "standard";
-    var diffNote   = difficultyMap[difficulty] || "";
-
-    return [
-      "あなたはビジネス電話の専門コーチです。",
-      "以下の状況に合わせた電話台本を作成してください。",
+  function buildPromptFromCtx(ctx) {
+    var lines = [
+      "あなたはビジネス電話の専門コーチです。次の情報をもとに、声に出して読める電話台本を作成してください。",
       "",
-      "## 状況",
-      "- 通話相手: " + (situationMap[situation] || situationMap.external),
-      "- 電話の目的: " + purpose,
-      "- 敬語レベル: " + (toneMap[tone] || toneMap.standard),
-      diffNote ? "- 特別な配慮: " + diffNote : "",
+      "## 電話の内容（本人の説明）",
+      ctx.freeText,
+    ];
+    if (ctx.clarifyPairs && ctx.clarifyPairs.length) {
+      lines.push("", "## 補足");
+      ctx.clarifyPairs.forEach(function(p) { lines.push("- " + p.q + " → " + p.a); });
+    }
+    lines.push(
+      "",
+      "## 敬語レベル",
+      "- " + (TONE_MAP[ctx.tone] || TONE_MAP.standard),
       "",
       "## 出力ルール",
       "- 挨拶・名乗りから本題の切り出しまで、声に出しやすい自然な日本語で",
       "- 名前・部署名は「〇〇」でプレースホルダーにすること",
-      "- 台本テキストのみ出力（見出し・説明文は不要）",
-      "- 200〜350字程度",
-    ].filter(Boolean).join("\n");
+      "- 台本テキストのみ出力（見出し・説明文・前置きは不要）",
+      "- 200〜350字程度"
+    );
+    return lines.join("\n");
+  }
+
+  function inferCaller(ctx) {
+    var hay = ctx.freeText + " " + (ctx.clarifyPairs || []).map(function(p){ return p.a; }).join(" ");
+    return /社内|部署|同僚|上司|内線|うちの/.test(hay) ? "internal" : "external";
   }
 
   function generateFromDialog() {
-    var situation = _dlgAnswers.situation || "external";
-    S.callerType  = (situation === "internal") ? "internal" : "external";
-    S.keigoLevel  = _dlgAnswers.tone || "standard";
-    S.purpose     = _dlgAnswers.purpose || "ご用件の確認";
-
-    // openDialog() が _dlgAnswers をリセットするため、プロンプトは先に組み立てる
-    var dialogPrompt = buildDialogPrompt();
-    S.lastPrompt = dialogPrompt;   // 「作り直す」で同じ条件を再利用するため保持
+    var ctx = { freeText: _freeText, clarifyPairs: _clarifyPairs.slice(), tone: _dlgTone };
+    S.genCtx     = ctx;
+    S.purpose    = _freeText || "ご用件の確認";
+    S.keigoLevel = ctx.tone;
+    S.callerType = inferCaller(ctx);
+    S.lastPrompt = buildPromptFromCtx(ctx);
 
     mascot(preGenMsg(), "think");
-    hideReport();
+    hideReport(); hideAdvice();
     setLoading(true);
     showThinking();
 
-    callWithRetry(dialogPrompt)
+    callWithRetry(S.lastPrompt)
       .then(function (text) {
         openDialog();              // 成功してから Q&A をリセット（失敗時は回答を残して再試行できる）
         applyGeneratedScript(text);
       })
       .catch(onGenError)
       .finally(function () { setLoading(false); });
+  }
+
+  // 結果の「敬語を調整」: 同じ内容のまま敬語レベルだけ変えて作り直す
+  function adjustTone(dir) {
+    var cur = S.genCtx ? S.genCtx.tone : S.keigoLevel;     // 履歴読込後など ctx 無しでも S.keigoLevel から調整
+    var i   = TONE_ORDER.indexOf(cur); if (i < 0) i = 1;
+    var ni  = Math.min(TONE_ORDER.length - 1, Math.max(0, i + dir));
+    if (ni === i) { toast(dir > 0 ? "もうこれ以上ないくらい丁寧キュン♡" : "もう十分やわらかいキュン♡", "warning"); return; }
+    var tone = TONE_ORDER[ni];
+    S.keigoLevel = tone;
+    if (S.genCtx) {
+      S.genCtx     = { freeText: S.genCtx.freeText, clarifyPairs: S.genCtx.clarifyPairs, tone: tone };
+      S.lastPrompt = buildPromptFromCtx(S.genCtx);
+    } else {
+      S.lastPrompt = buildPrompt();                        // 履歴ベース：S.purpose/callerType/keigoLevel から組み直す
+    }
+    toast((dir > 0 ? "🙇 もっと丁寧に" : "😊 やわらかく") + "作り直すキュン♡", "success");
+    generate();
+  }
+
+  /* ── 生成後アドバイス（台本とは別の励まし＋コツ） ── */
+  var _adviceRun = 0;
+  function showAdvice() {
+    var a = $("fC_advice"); if (!a) return;
+    _adviceRun++;                                   // 進行中の古いアドバイス応答を無効化
+    var r = $("fC_adviceResult"); if (r) r.innerHTML = "";
+    a.querySelectorAll(".fC_advice-chip").forEach(function(b){ b.disabled = false; });
+    a.hidden = false;
+  }
+  function hideAdvice() { var a = $("fC_advice"); if (a) a.hidden = true; }
+
+  function handleConcern(concern, chipEl) {
+    var res = $("fC_adviceResult");
+    if (/特に|心配ない|だいじょうぶ|大丈夫/.test(concern)) {
+      if (res) res.innerHTML = adviceCardHtml("その調子キュン♡ 準備はバッチリだよ。深呼吸して、あなたのペースでいってらっしゃい！");
+      mascot("いい意気込みキュン♡ あなたなら大丈夫！", "cheer");
+      sfx("tap"); haptic(8);
+      return;
+    }
+    var run = ++_adviceRun;
+    if (chipEl) chipEl.disabled = true;             // 連打防止は押したチップだけ（他の不安も後で聞ける）
+    if (res) res.innerHTML = '<div style="padding:0.4em 0;color:var(--text-muted);font-size:0.85rem;">💭 コツを考えてるキュン <span class="fC_dots" aria-hidden="true"><i></i><i></i><i></i></span></div>';
+    setFujiPose("love");
+    var prompt = [
+      "あなたは「ふじキュン♡」という、やさしい電話コーチです。",
+      "ユーザーは電話の前に「" + concern + "」と不安を感じています。",
+      "台本そのものではなく、本人の気持ちが軽くなる短い励ましと、すぐ実践できる具体的なコツを1つだけ、日本語2〜3文で伝えてください。",
+      "やさしく、絶対に否定しないこと。語尾は「キュン」「キュン♡」を自然に使うこと。",
+      "電話の内容: " + (S.purpose || "（未入力）"),
+    ].join("\n");
+    callGroqProxy(prompt).then(function(txt) {
+      if (run !== _adviceRun) return;               // 別の台本/不安に切り替わっていたら破棄
+      if (res) res.innerHTML = adviceCardHtml((txt || "").trim());
+      mascot("不安なところ、いっしょに減らそうキュン♡", "love");
+      sfx("success");
+    }).catch(function() {
+      if (run !== _adviceRun) return;
+      if (res) res.innerHTML = adviceCardHtml("だいじょうぶキュン♡ ゆっくり、ひと呼吸おいて話せば、ちゃんと伝わるよ。困ったら台本を見ながらでOK！");
+    }).finally(function() {
+      if (chipEl) chipEl.disabled = false;          // 終わったら再有効化 → 別の不安も相談できる
+    });
+  }
+  function adviceCardHtml(text) {
+    return '<div class="fC_advice-card">'
+      + '<img src="assets/fujikyun/love.png" alt="ふじキュン" data-emoji="💕" onerror="fujiImgErr(this,\'💕\')">'
+      + '<div class="fC_advice-card-text">' + escHtml(text) + '</div></div>';
   }
 
   /* ── Follow-up scenario chain ───────────────── */
@@ -2671,12 +2847,27 @@
   }
 
   $("fC_dialogStep").addEventListener("click", function(e) {
-    var opt = e.target.closest("[data-dlgopt]");
-    if (!opt) return;
-    opt.style.borderColor = "var(--primary)";
-    opt.style.background  = "var(--primary-light)";
-    sfx("tap"); haptic(8);
-    dlgAdvance(DIALOG_QS[_dlgStep].id, opt.dataset.dlgopt, opt.textContent);
+    var clar = e.target.closest("[data-clar]");
+    if (clar) {
+      var q   = _clarifyQs[_clarifyIdx];
+      var ans = q.options[Number(clar.dataset.clar)];
+      _clarifyPairs.push({ q: q.q, a: ans });
+      _flashOpt(clar);
+      appendDlgMsg(true, ans);
+      _clarifyIdx++;
+      $("fC_dialogStep").innerHTML = "";
+      setTimeout(renderClarifyStep, 220);
+      return;
+    }
+    var tone = e.target.closest("[data-tone]");
+    if (tone) {
+      _dlgTone = tone.dataset.tone;
+      _flashOpt(tone);
+      appendDlgMsg(true, toneLabel(_dlgTone));
+      $("fC_dialogStep").innerHTML = "";
+      setTimeout(dlgFinish, 220);
+      return;
+    }
   });
 
   /* ── Init ───────────────────────────────────── */
