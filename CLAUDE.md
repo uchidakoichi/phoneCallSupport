@@ -2,7 +2,7 @@
 
 ## プロジェクト概要
 
-**FujiCall v3.0.0** — 電話かけ出しサポートアプリ「ふじキュン♡」  
+**FujiCall v4.0.0** — 電話かけ出しサポートアプリ「ふじキュン♡」  
 藤沢市マスコット「ふじキュン♡」が電話台本を生成してくれる Web アプリ。  
 ユーザーは API キーを一切入力せずに使える。
 
@@ -16,6 +16,13 @@
 ## 現在の状態
 
 ### 直近の決定事項
+- **v4.0.0 全方位の品質磨き**（2026-06-14）。8観点の監査＋差分の敵対的レビュー（ワークフロー）を経て実施:
+  - **効果音＋触覚（既定OFF）**: Web Audio API 合成のみ（ファイル/CDN不使用＝CSP安全）。ヘッダーの🔔/🔇トグル（`localStorage: fujiCall_sfx`）で音と触覚を一括ON/OFF。`_ac()`遅延生成→`playTone`/`playChord`→`sfx(name)`（70msスロットル・sine/triangle・gain≤0.16）。`tap/success/levelup/badge/copy/recStart/recStop/error` を生成完了・コピー・録音・レベルアップ・バッジ・タップ等にフック。**autoplay対策で `init()` では音を鳴らさない**（初回は必ずユーザー操作起点）
+  - **配色をふじキュンのラベンダー基調に**: `--accent` をピンク#f06292→#9575cd（ほっぺの色）、小ラベル用に `--primary-text`(#00747f)・`--accent-deep`(#5e35b1) を追加しAAコントラスト確保。暗色の成長カードも紫系へ調和
+  - **文言を優しい友達ボイスに統一**: `preGenMsg`/`postGenMsg` の「戦士/マスター」ペルソナを撤廃し、レベル名（はじめまして〜無二の親友）に沿った穏やかな応援に。「台本なしでも話せる」等の煽りを排除。エラー文言から生メッセージ漏れを除去、グローバルエラーは抑制（ノイズ無視＋8秒スロットル）
+  - **演出**: 台本リベール（`fC_reveal`）、全タップ要素の`:active`、レベルアップ紙吹雪（`burstConfetti`）、考え中の3点ドット、Q&A選択の確定フラッシュ
+  - **A11y/モバイル**: reduced-motion を全アニメに拡張＋JSパーティクルもガード、`safe-area-inset`、Q&Aの最初の選択肢へフォーカス＋`role=group`、認証モーダルのフォーカストラップ＋復帰、結果アクションを2×2グリッド＋44pxタッチターゲット、iOS入力ズーム抑止（16px）
+  - **バグ/堅牢化**: デモ機能一式削除、**「作り直す」は直前/履歴の条件を再利用**、**生成失敗時はQ&A回答を保持（`openDialog()`は成功時のみ）**、録音パネルを閉じたらマイク確実解放（取得待ち・解析中も中断）、クラウド統計を**非破壊マージ**（`mergeStats`＋`_syncing`再入ガード＋履歴重複排除）、ポーズ画像の先読み、連続来訪ストリーク
 - **AIは Groq のみ**（Gemini・OpenAI は廃止）。全リクエストはサーバープロキシ経由
 - **ユーザー入力 API キーはゼロ**。Groq・Hume・Supabase はすべて Vercel 環境変数で管理
 - **クラウド同期はマジックリンク認証**（2026-06-13 に6桁コードから変更）。Supabase デフォルトのメールテンプレートが送るのはコードではなくサインインリンクのため、UI をリンク方式に統一。`signInWithOtp` に `emailRedirectTo: window.location.origin` を渡し、ユーザーがメール内リンクをタップして戻ると `detectSessionInUrl`（Supabase JS デフォルト）→ `onAuthStateChange`（`SIGNED_IN`）で自動ログイン。ユーザーはメールアドレスだけ入力すればよい
@@ -162,6 +169,17 @@ IIFE 内の主要な変数・関数:
   openAuthModal()           — 認証（マジックリンク）モーダルを開く
   renderAuthModal()         — 認証状態に応じた UI を描画（idle / link_sent / logged_in）
   syncFromCloud()           — クラウドから履歴・統計を取得
+  _ac()/playTone()/playChord()/SFX/sfx()/haptic() — Web Audio 効果音＋触覚（既定OFF）
+  toggleSound()/updateSoundBtn() — ヘッダー🔔/🔇トグル（fujiCall_sfx）
+  burstHearts(opts)/burstConfetti() — ハート／レベルアップ紙吹雪（reduced-motionでJSガード）
+  showThinking()/renderScriptBox()/revealEl()/focusScript() — 台本リベール・〇〇強調・フォーカス
+  applyGeneratedScript()/onGenError() — 生成成功/失敗の共通処理（失敗時は直前台本を復元）
+  generate()                — 「作り直す」: S.lastPrompt（無ければ buildPrompt）で再生成
+  generateFromDialog()      — Q&Aから生成。成功時のみ openDialog() でリセット
+  releaseMic()/abortRecording() — 録音中/取得待ち/解析中のマイク確実解放
+  mergeStats()              — ローカル/クラウド統計の非破壊マージ
+  updateStreak()/preloadFujiPoses() — 連続来訪・ポーズ画像先読み
+  _authTrap()               — 認証モーダルのフォーカストラップ
   init()                    — アプリ起動処理
 ```
 
@@ -172,7 +190,8 @@ IIFE 内の主要な変数・関数:
 | キー | 内容 |
 |---|---|
 | `fujiCall_history` | 台本履歴（最大3件）|
-| `fujiCall_stats` | ゲーミフィケーション統計 |
+| `fujiCall_stats` | ゲーミフィケーション統計（total/badges/keigoStats/callerStats/streak/lastVisit）|
+| `fujiCall_sfx` | 効果音＋触覚のON/OFF（`"on"`/`"off"`、既定OFF）|
 
 ※ `fujiCall_apiKey` / `fujiCall_provider` / `fujiCall_humeKey` / `fujiCall_sbUrl` / `fujiCall_sbKey` は init() で自動削除済み
 
@@ -180,6 +199,7 @@ IIFE 内の主要な変数・関数:
 
 ## 過去の経緯
 
+- **2026-06-14:** **v4.0.0 全方位の品質磨き**。8観点の品質監査と差分の敵対的レビューをワークフローで実施し、確定指摘を反映。(1) Web Audio 合成の効果音＋触覚（既定OFF・🔔/🔇トグル・`fujiCall_sfx`）、(2) 配色をふじキュンのラベンダー（#9575cd）基調へ再スキン＋小ラベルのAAコントラスト（`--primary-text`/`--accent-deep`）、(3) 励まし・エラー文言を優しい友達ボイスに統一（戦士ペルソナ撤廃・生メッセージ漏れ除去）、(4) 台本リベール／押下フィードバック／紙吹雪／ドット演出、(5) reduced-motion全網羅・safe-area・Q&Aフォーカス・認証フォーカストラップ・2×2アクション・44pxターゲット・iOSズーム抑止、(6) デモ機能一式削除・「作り直す」の条件再利用・**生成失敗時のQ&A回答保持**・マイク確実解放・クラウド統計の非破壊マージ・ポーズ先読み・連続来訪ストリーク。レビューで見つかった7件（コントラスト4箇所/デモCSS残存/取得待ち中のマイクリーク/履歴読込後の再生成スタール/狭幅ヘッダー）も修正済み。バージョンを v4.0.0 に統一
 - **2026-06-14:** **バグ修正** — Q&A の回答が台本に全く反映されない問題。`generateFromDialog()` が `openDialog()`（`_dlgAnswers` をリセット）を呼んだ**後**に `buildDialogPrompt()` を実行していたため、プロンプトが常に空→デフォルト値（社外・ご用件の確認・標準敬語）で生成されていた。`buildDialogPrompt()` をリセット前に実行してプロンプト文字列を確保するよう修正。デプロイ環境で「謝罪・個人情報流出・謙譲語」を入力し、内容が反映された謝罪台本が出ることを確認済み
 - **2026-06-14:** 「UI に可愛さ・親しみやすさがない」という指摘に対応し、ふじキュンを実画像で登場させた。藤沢市公式イラストから 10 ポーズを取得・Web 最適化して `assets/fujikyun/` に同梱（©藤沢市クレジットをフッターに付記）。(1) マスコットバーをキャラ＋しっぽ付き吹き出し化し、`FUJI`/`setFujiPose()` で状態別に表情を出し分け＋ぴょこぴょこアニメ＋タップ反応（`fujiTap`/`burstHearts`）、(2) 成長カードを「ふじキュンとの関係」（はじめまして→無二の親友）に再設計しアバターを実画像化、(3) 電話後の報告カード（`#fC_report`）・起動時デイリーひとこと・Q&A/練習アイコンの画像化、(4) コピー時「いってらっしゃい」＋ハート演出。画像欠落時は `fujiImgErr()` で絵文字フォールバック。`.gitignore` に `.claude/` を追加
 - **2026-06-13:** 認証を6桁コードからマジックリンクに変更。Supabase デフォルトのメールテンプレートが送るのはリンクのため、コード入力 UI（`verifyOtp`）を廃止し「メールのリンクをタップ→自動ログイン」方式に。`signInWithOtp` に `emailRedirectTo` を追加、`onAuthStateChange` の `SIGNED_IN` で復帰時にログイン完了トーストを表示。`_authStep` の `code_sent` を `link_sent` にリネーム
