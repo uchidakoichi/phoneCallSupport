@@ -31,6 +31,7 @@
 - **AIは Groq のみ**（Gemini・OpenAI は廃止）。全リクエストはサーバープロキシ経由
 - **ユーザー入力 API キーはゼロ**。Groq・Hume・Supabase はすべて Vercel 環境変数で管理
 - **クラウド同期はログインコード認証**（2026-06-14 にマジックリンクから再変更）。理由: **ホーム画面アプリ（iOS standalone PWA）ではメール内リンクが必ず Safari 側で開き**、standalone とは別のストレージ領域のためアプリ内でセッションを受け取れない（マジックリンクは原理的に完結しない）。リダイレクト不要のコード入力なら standalone でも完結する。フロー: `signInWithOtp({email})` 送信 → メールのコードを入力 → `verifyOtp({email, token, type:'email'})` → `onAuthStateChange(SIGNED_IN)` でログイン完了。`emailRedirectTo` も残しているのでブラウザではメール内リンクからもログイン可。**コード桁数は Supabase の設定依存（このプロジェクトは8桁）**。入力欄は `maxlength=10`・検証は `\d{4,10}` で桁数変更にも耐える（以前 `maxlength=6` で8桁が切り詰められ検証失敗するバグを修正）。**前提: Supabase のメールテンプレートに `{{ .Token }}` を含める設定**（既定はリンクのみ送るため）
+- **アプリアイコン・favicon を追加し PWA（standalone）対応**（2026-06-14）。「ホーム画面に追加」時のアイコン無し問題に対応。ふじキュンをパステル背景に合成した不透明アイコンを `assets/icons/`（apple-touch-icon 180／icon 192・512／favicon 16・32）とルート `favicon.ico` に配置。`<head>` に `icon`/`apple-touch-icon`/`manifest`/`theme-color(#9575cd)`/`apple-mobile-web-app-*` を追加、`site.webmanifest`（standalone・名称「ふじキュン♡」）。standalone を有効化したことが上記「ログインコード認証」への変更理由（マジックリンクが standalone で完結しないため）
 - **設定モーダル・⚙️ボタンを削除**。テンプレートをハードルの高いビジネス場面に差し替え
 - **Step 1/2/3 を UI から削除**（2026-06-08）。台本生成のエントリーポイントを「Q&Aで台本を作る」ダイアログのみに統一。通話相手・目的・敬語レベルはすべてダイアログ内の Q&A で収集する
 - **Q&A をモーダルからインライン表示に変更**（2026-06-08）。「はじめる」ボタン・オーバーレイを廃止し、ページロード時に Q&A チャットが自動起動。台本生成後は即座にリセットされ次の台本作りを開始できる
