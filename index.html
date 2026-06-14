@@ -2171,7 +2171,7 @@
   });
 
   /* ── Supabase Cloud Sync ────────────────────── */
-  var _authStep      = "idle"; // "idle" | "link_sent"
+  var _authStep      = "idle"; // "idle" | "code_sent"
   var _authEmail     = "";
   var _authModalOpen = false;
 
@@ -2286,17 +2286,39 @@
       return;
     }
 
-    if (_authStep === "link_sent") {
+    if (_authStep === "code_sent") {
       content.innerHTML =
         '<div style="text-align:center;padding:0.3em 0 0.2em;">'
         + '<div style="font-size:2.6rem;margin-bottom:0.4em;">📬</div>'
-        + '<p style="font-size:0.92rem;font-weight:700;color:var(--primary-text);margin-bottom:0.5em;">メールを確認してキュン♡</p>'
-        + '<p style="font-size:0.83rem;color:var(--text-muted);line-height:1.75;margin-bottom:1.3em;">'
-        + '<strong>' + escHtml(_authEmail) + '</strong> にログイン用のリンクを送ったよ。<br>'
-        + 'メール内のリンクをタップすると、このアプリに戻って自動でログイン完了キュン♡</p>'
+        + '<p style="font-size:0.92rem;font-weight:700;color:var(--primary-text);margin-bottom:0.4em;">メールのコードを入力してキュン♡</p>'
+        + '<p style="font-size:0.8rem;color:var(--text-muted);line-height:1.7;margin-bottom:1em;">'
+        + '<strong>' + escHtml(_authEmail) + '</strong> に6桁のログインコードを送ったよ。<br>届いたコードを入力してね♡（メール内のリンクからでもOK）</p>'
         + '</div>'
-        + '<button class="fC_btn-secondary" id="fC_otpResendBtn" style="width:100%;min-height:44px;font-size:0.85rem;">📧 別のメールアドレスで送り直す</button>';
+        + '<div class="fC_form-group">'
+        + '<input type="text" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]*" maxlength="6" class="fC_input" id="fC_authCode" placeholder="6桁のコード" style="text-align:center;letter-spacing:0.4em;font-size:1.2rem;">'
+        + '</div>'
+        + '<button class="fC_btn-primary" id="fC_authVerifyBtn" style="width:100%;min-height:46px;">✅ ログイン</button>'
+        + '<button class="fC_btn-secondary" id="fC_otpResendBtn" style="width:100%;min-height:44px;font-size:0.85rem;margin-top:0.5em;">📧 別のアドレスで送り直す</button>';
 
+      setTimeout(function() { var el = $("fC_authCode"); if (el) el.focus(); }, 80);
+
+      var doVerify = function() {
+        var code = (($("fC_authCode") || {}).value || "").replace(/\D/g, "");
+        if (!/^\d{6}$/.test(code)) { toast("📧 6桁のコードを入力してキュン♡", "warning"); return; }
+        var btn = $("fC_authVerifyBtn");
+        btn.disabled = true; btn.textContent = "確認中…";
+        _sb.auth.verifyOtp({ email: _authEmail, token: code, type: "email" })
+          .then(function(res) {
+            if (res.error) throw res.error;
+            // ログイン完了処理は onAuthStateChange(SIGNED_IN) が行う
+          }).catch(function(e) {
+            console.error("[FujiCall verify]", e);
+            toast("コードが違うみたいキュン… もう一度確かめてね♡", "error");
+            btn.disabled = false; btn.textContent = "✅ ログイン";
+          });
+      };
+      $("fC_authVerifyBtn").addEventListener("click", doVerify);
+      $("fC_authCode").addEventListener("keydown", function(e) { if (e.key === "Enter") doVerify(); });
       $("fC_otpResendBtn").addEventListener("click", function() {
         _authStep  = "idle";
         _authEmail = "";
@@ -2309,12 +2331,12 @@
     content.innerHTML =
       '<p style="font-size:0.82rem;color:var(--text-muted);margin-bottom:1em;line-height:1.6;">'
       + '☁️ メールアドレスを登録すると台本履歴・レベルをどの端末からでも引き継げるキュン♡<br>'
-      + '<small>ログイン用のリンクがメールで届くよ。パスワード不要！</small></p>'
+      + '<small>6桁のログインコードがメールで届くよ。パスワード不要！</small></p>'
       + '<div class="fC_form-group">'
       + '<label class="fC_label" for="fC_authEmail">メールアドレス</label>'
       + '<input type="email" class="fC_input" id="fC_authEmail" placeholder="you@example.com" autocomplete="email">'
       + '</div>'
-      + '<button class="fC_btn-primary" id="fC_authSendBtn" style="width:100%;min-height:46px;">📧 ログインリンクを送る</button>'
+      + '<button class="fC_btn-primary" id="fC_authSendBtn" style="width:100%;min-height:46px;">📧 ログインコードを送る</button>'
       + '<p style="font-size:0.73rem;color:var(--text-muted);margin-top:0.6em;text-align:center;">登録しなくてもアプリは使えるキュン♡（履歴はこの端末のみ）</p>';
 
     setTimeout(function() { var el = $("fC_authEmail"); if (el) el.focus(); }, 80);
@@ -2328,13 +2350,13 @@
         .then(function(res) {
           if (res.error) throw res.error;
           _authEmail = email;
-          _authStep  = "link_sent";
+          _authStep  = "code_sent";
           renderAuthModal();
-          toast("📧 ログインリンクを送ったキュン♡ メールのリンクをタップしてね！", "success", 7000);
+          toast("📧 ログインコードを送ったキュン♡ メールを確認してね！", "success", 7000);
         }).catch(function(e) {
           console.error("[FujiCall auth]", e);
           toast("メールを送れなかったみたいキュン… アドレスを確かめて、もう一度ためしてね♡", "error");
-          btn.disabled = false; btn.textContent = "📧 ログインリンクを送る";
+          btn.disabled = false; btn.textContent = "📧 ログインコードを送る";
         });
     });
   }
