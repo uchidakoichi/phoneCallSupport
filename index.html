@@ -2292,10 +2292,10 @@
         + '<div style="font-size:2.6rem;margin-bottom:0.4em;">📬</div>'
         + '<p style="font-size:0.92rem;font-weight:700;color:var(--primary-text);margin-bottom:0.4em;">メールのコードを入力してキュン♡</p>'
         + '<p style="font-size:0.8rem;color:var(--text-muted);line-height:1.7;margin-bottom:1em;">'
-        + '<strong>' + escHtml(_authEmail) + '</strong> に6桁のログインコードを送ったよ。<br>届いたコードを入力してね♡（メール内のリンクからでもOK）</p>'
+        + '<strong>' + escHtml(_authEmail) + '</strong> に8桁のログインコードを送ったよ。<br>届いたコードを入力してね♡（メール内のリンクからでもOK）</p>'
         + '</div>'
         + '<div class="fC_form-group">'
-        + '<input type="text" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]*" maxlength="6" class="fC_input" id="fC_authCode" placeholder="6桁のコード" style="text-align:center;letter-spacing:0.4em;font-size:1.2rem;">'
+        + '<input type="text" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]*" maxlength="10" class="fC_input" id="fC_authCode" placeholder="8桁のコード" style="text-align:center;letter-spacing:0.3em;font-size:1.2rem;">'
         + '</div>'
         + '<button class="fC_btn-primary" id="fC_authVerifyBtn" style="width:100%;min-height:46px;">✅ ログイン</button>'
         + '<button class="fC_btn-secondary" id="fC_otpResendBtn" style="width:100%;min-height:44px;font-size:0.85rem;margin-top:0.5em;">📧 別のアドレスで送り直す</button>';
@@ -2304,7 +2304,7 @@
 
       var doVerify = function() {
         var code = (($("fC_authCode") || {}).value || "").replace(/\D/g, "");
-        if (!/^\d{6}$/.test(code)) { toast("📧 6桁のコードを入力してキュン♡", "warning"); return; }
+        if (!/^\d{4,10}$/.test(code)) { toast("📧 メールに届いたコードを入力してキュン♡", "warning"); return; }
         var btn = $("fC_authVerifyBtn");
         btn.disabled = true; btn.textContent = "確認中…";
         _sb.auth.verifyOtp({ email: _authEmail, token: code, type: "email" })
@@ -2331,7 +2331,7 @@
     content.innerHTML =
       '<p style="font-size:0.82rem;color:var(--text-muted);margin-bottom:1em;line-height:1.6;">'
       + '☁️ メールアドレスを登録すると台本履歴・レベルをどの端末からでも引き継げるキュン♡<br>'
-      + '<small>6桁のログインコードがメールで届くよ。パスワード不要！</small></p>'
+      + '<small>8桁のログインコードがメールで届くよ。パスワード不要！</small></p>'
       + '<div class="fC_form-group">'
       + '<label class="fC_label" for="fC_authEmail">メールアドレス</label>'
       + '<input type="email" class="fC_input" id="fC_authEmail" placeholder="you@example.com" autocomplete="email">'

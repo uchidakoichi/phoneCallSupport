@@ -30,7 +30,7 @@
   - **バグ/堅牢化**: デモ機能一式削除、**「作り直す」は直前/履歴の条件を再利用**、**生成失敗時はQ&A回答を保持（`openDialog()`は成功時のみ）**、録音パネルを閉じたらマイク確実解放（取得待ち・解析中も中断）、クラウド統計を**非破壊マージ**（`mergeStats`＋`_syncing`再入ガード＋履歴重複排除）、ポーズ画像の先読み、連続来訪ストリーク
 - **AIは Groq のみ**（Gemini・OpenAI は廃止）。全リクエストはサーバープロキシ経由
 - **ユーザー入力 API キーはゼロ**。Groq・Hume・Supabase はすべて Vercel 環境変数で管理
-- **クラウド同期は6桁コード認証**（2026-06-14 にマジックリンクから再変更）。理由: **ホーム画面アプリ（iOS standalone PWA）ではメール内リンクが必ず Safari 側で開き**、standalone とは別のストレージ領域のためアプリ内でセッションを受け取れない（マジックリンクは原理的に完結しない）。リダイレクト不要の6桁コード入力なら standalone でも完結する。フロー: `signInWithOtp({email})` 送信 → メールの6桁コードを入力 → `verifyOtp({email, token, type:'email'})` → `onAuthStateChange(SIGNED_IN)` でログイン完了。`emailRedirectTo` も残しているのでブラウザではメール内リンクからもログイン可。**前提: Supabase のメールテンプレートに `{{ .Token }}`（6桁コード）を含める設定**（既定はリンクのみ送るため）
+- **クラウド同期はログインコード認証**（2026-06-14 にマジックリンクから再変更）。理由: **ホーム画面アプリ（iOS standalone PWA）ではメール内リンクが必ず Safari 側で開き**、standalone とは別のストレージ領域のためアプリ内でセッションを受け取れない（マジックリンクは原理的に完結しない）。リダイレクト不要のコード入力なら standalone でも完結する。フロー: `signInWithOtp({email})` 送信 → メールのコードを入力 → `verifyOtp({email, token, type:'email'})` → `onAuthStateChange(SIGNED_IN)` でログイン完了。`emailRedirectTo` も残しているのでブラウザではメール内リンクからもログイン可。**コード桁数は Supabase の設定依存（このプロジェクトは8桁）**。入力欄は `maxlength=10`・検証は `\d{4,10}` で桁数変更にも耐える（以前 `maxlength=6` で8桁が切り詰められ検証失敗するバグを修正）。**前提: Supabase のメールテンプレートに `{{ .Token }}` を含める設定**（既定はリンクのみ送るため）
 - **設定モーダル・⚙️ボタンを削除**。テンプレートをハードルの高いビジネス場面に差し替え
 - **Step 1/2/3 を UI から削除**（2026-06-08）。台本生成のエントリーポイントを「Q&Aで台本を作る」ダイアログのみに統一。通話相手・目的・敬語レベルはすべてダイアログ内の Q&A で収集する
 - **Q&A をモーダルからインライン表示に変更**（2026-06-08）。「はじめる」ボタン・オーバーレイを廃止し、ページロード時に Q&A チャットが自動起動。台本生成後は即座にリセットされ次の台本作りを開始できる
@@ -44,7 +44,7 @@
 - **フッターに公式クレジットを追加**（2026-06-14）。`.fC_credit` に「イラスト：「キュンとするまち。藤沢」公式マスコットキャラクター ふじキュン♡ ©藤沢市」。公式の利用条件は **販売目的以外は無料・申請不要、名称または ©藤沢市 の付記が必要**
 
 ### 未解決の課題
-- **【要対応】Supabase のメールテンプレートに6桁コード `{{ .Token }}` を含めること**（ダッシュボード → Authentication → Email Templates → Magic Link/OTP）。未設定だとメールにコードが載らず、ホーム画面アプリでのコード入力ログインが成立しない。ブラウザでのリンクログインも併用するなら Redirect URLs に本番 URL の登録も必要
+- **【要対応】Supabase のメールテンプレートにログインコード `{{ .Token }}` を含めること**（ダッシュボード → Authentication → Email Templates → Magic Link/OTP）。未設定だとメールにコードが載らず、ホーム画面アプリでのコード入力ログインが成立しない。ブラウザでのリンクログインも併用するなら Redirect URLs に本番 URL の登録も必要。コード桁数は Authentication の設定依存（現状8桁。アプリ側は4〜10桁を許容）
 - **コード認証の実機確認（コード送信→入力→ログイン→同期）はデプロイ後に要確認**。特に iOS ホーム画面アプリ（standalone）で完結するかを確認
 - `onAuthStateChange` の `SIGNED_IN` 判定でログイン完了トーストを出しているが、古い supabase-js だと通常リロード時にも `SIGNED_IN` が発火する版があり、その場合リロードのたびにトーストが出る可能性あり（現行の `@supabase/supabase-js@2` は `INITIAL_SESSION` を発火するため問題なし）
 - HUME_API_KEY は Vercel に未設定の可能性あり（声分析が動かない場合は要確認）
@@ -84,7 +84,7 @@
 1. **台本生成** — ①自由記述 → ②AIが不足項目だけ質問（社内/社外・初回など）→ ③敬語レベル（謙譲語/標準/フレンドリー）→ Groq が台本を生成。生成後は不安アドバイス・敬語微調整つき作り直しも可能
 2. **音読練習モード** — 録音 → Whisper 文字起こし → Hume AI 声分析 → ふじキュン♡フィードバック
 3. **成長ゲーミフィケーション** — レベル・バッジシステム（localStorage）
-4. **クラウド同期** — Supabase 6桁コード認証後、台本履歴・統計をクロスデバイス共有
+4. **クラウド同期** — Supabase ログインコード認証後、台本履歴・統計をクロスデバイス共有
 
 ---
 
@@ -156,7 +156,7 @@ IIFE 内の主要な変数・関数:
   S                         — アプリ状態（callerType, keigoLevel, demoMode 等）
   _sb / _sbUser             — Supabase クライアント・ログインユーザー
   _humeEnabled              — Hume AI が有効かどうか（api/config から取得）
-  _authStep / _authEmail    — 6桁コード認証フロー状態（idle / code_sent）
+  _authStep / _authEmail    — コード認証フロー状態（idle / code_sent）
   FUJI                      — ふじキュンのポーズ→画像/絵文字フォールバック マップ
   setFujiPose(pose)         — マスコット画像 #fC_mascotImg を pose に切り替え（pop アニメ）
   mascot(msg, pose)         — 吹き出しメッセージ更新＋任意でポーズ切替
@@ -176,7 +176,7 @@ IIFE 内の主要な変数・関数:
   pollHumeJob()             — /api/hume-status + /api/hume-predictions でポーリング
   renderPracticeResult()    — 練習結果描画
   initSupabase()            — /api/config フェッチ → _humeEnabled 設定 → Supabase 初期化
-  openAuthModal()           — 認証（6桁コード）モーダルを開く。verifyOtp でコード検証
+  openAuthModal()           — 認証（ログインコード）モーダルを開く。verifyOtp でコード検証
   renderAuthModal()         — 認証状態に応じた UI を描画（idle / link_sent / logged_in）
   syncFromCloud()           — クラウドから履歴・統計を取得
   _ac()/playTone()/playChord()/SFX/sfx()/haptic() — Web Audio 効果音＋触覚（既定OFF）
@@ -215,7 +215,7 @@ IIFE 内の主要な変数・関数:
 
 ## 過去の経緯
 
-- **2026-06-14: 認証をマジックリンク→6桁コード入力に再変更**（ホーム画面アプリ対応）。ユーザー報告: 「ホーム画面に追加」した standalone アプリでマジックリンクをタップすると Safari で開いてしまい同期できない。原因は iOS standalone PWA がメール内リンクを Safari（別ストレージ領域）で開く仕様。リダイレクト不要の6桁コード入力 UI を復活（`code_sent` ステート、`#fC_authCode` 入力、`verifyOtp({email, token, type:'email'})`）。standalone（`apple-mobile-web-app-capable`/`display:standalone`）は維持。`emailRedirectTo` は残しブラウザのリンクログインも併用可。**前提: Supabase メールテンプレに `{{ .Token }}` を含める設定が必要**
+- **2026-06-14: 認証をマジックリンク→ログインコード入力に再変更**（ホーム画面アプリ対応）。ユーザー報告: 「ホーム画面に追加」した standalone アプリでマジックリンクをタップすると Safari で開いてしまい同期できない。原因は iOS standalone PWA がメール内リンクを Safari（別ストレージ領域）で開く仕様。リダイレクト不要のコード入力 UI を復活（`code_sent` ステート、`#fC_authCode` 入力、`verifyOtp({email, token, type:'email'})`）。standalone（`apple-mobile-web-app-capable`/`display:standalone`）は維持。`emailRedirectTo` は残しブラウザのリンクログインも併用可。**前提: Supabase メールテンプレに `{{ .Token }}` を含める設定が必要**。当初 6桁前提（`maxlength=6`）だったが Supabase の実コードは**8桁**だったため切り詰めで検証失敗 → `maxlength=10`・検証 `\d{4,10}`・表示「8桁」に修正（桁数変更にも耐える）
 - **2026-06-14: アプリアイコン／favicon を追加**。「ホーム画面に追加」でアイコンが無かった問題に対応。ふじキュン（`normal.png`）をラベンダー→ピンクのパステル背景に合成した**不透明**正方形アイコンを Pillow で生成し `assets/icons/` に配置（apple-touch-icon 180／icon 192・512／favicon 16・32）。ルートに `favicon.ico`（16/32/48）。`<head>` に `icon`/`apple-touch-icon`/`manifest`/`theme-color(#9575cd)`/`apple-mobile-web-app-*` を追加し、`site.webmanifest`（standalone・名称「ふじキュン♡」）も用意。全て同一オリジン（CSP `img-src 'self'` 内）。ローカルで 200 配信・manifest 解析を確認（iOS実機のホーム画面追加はデプロイ後に要確認）
 - **2026-06-14: Q&Aフロー再設計（自由記述 → AIが不足質問 → 敬語）**。ユーザー指摘（固定4択の軸が混在し社内/社外のお詫びを表現できない／「難しい点」が台本のどこに効くか不明／回答を編集して作り直せない）を受けて再設計。①自由記述、②記述を Groq に渡し不足項目だけ AI が質問（`fetchClarify`/`parseClarify`、寛容なJSON抽出＋12秒タイムアウト＋`FALLBACK_QS`、`response_format` は使わず堅牢化）、③敬語レベル。「難しい点」は生成後の別カード `#fC_advice` に分離し台本とは別の励まし＋コツへ。「作り直す」は `S.genCtx` 保持＋`adjustTone()` で同内容のまま敬語だけ変えて再生成（🙇もっと丁寧に/😊やわらかく）。差分は6観点で敵対的レビューし確定19件（parseClarifyの寛容抽出＋選択肢正規化、clarifyタイムアウト、[]とnullの区別、履歴読込で genCtx/advice リセット、adjustToneの履歴フォールバック、アドバイスchip再有効化＋古い応答の競合防止、aria-live、44pxターゲット）を反映。デプロイ環境で「社内のミスのお詫び」を入力し、AIが社内/社外を質問→社内のお詫び台本が生成され、アドバイス・敬語微調整も動作することを確認
 - **2026-06-14: Q&A再設計のレビュー確定修正（敵対的レビューで確定した19件→主な実装）**
