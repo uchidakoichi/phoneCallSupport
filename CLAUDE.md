@@ -16,6 +16,11 @@
 ## 現在の状態
 
 ### 直近の決定事項
+- **Q&Aを「自由記述 → AIが不足質問 → 敬語調整」に再設計**（2026-06-14）。固定4択（場面の軸が混在し、社内/社外どちらにもある「お詫び」を表現できなかった）を廃止。
+  - ① 自由記述（どんな電話か）→ ② その記述を Groq に渡し、`fetchClarify()`/`parseClarify()` が**不足している項目だけ**を質問として返す（1問ずつ提示。`callGroqProxy` で JSON 指示、寛容な抽出＋12秒タイムアウト、失敗/遅延は固定質問 `FALLBACK_QS` へフォールバック）→ ③ 敬語レベル → 生成
+  - 「難しいと感じる点」は台本プロンプトから除外し、**生成後の別カード `#fC_advice`** へ移動。不安を選ぶと `handleConcern()` が**台本とは別の励まし＋具体的コツ**を Groq で返す（「特にない」は API を呼ばず即返答）
+  - 「作り直す」を**微調整つき**に強化。`S.genCtx{freeText, clarifyPairs, tone}` を保持し、結果の「🙇もっと丁寧に / 😊やわらかく」チップ（`adjustTone()`）で**同じ内容のまま敬語だけ変えて再生成**。通常の「🔄作り直す」は同条件の引き直し
+  - 通話相手（庁内/庁外）は `inferCaller()` が記述＋回答から推定（履歴/印刷/フォローアップ用）。デプロイ環境でAI質問・生成・アドバイス・微調整を end-to-end 確認済み（社内のお詫び台本が正しく生成されることを確認）
 - **v4.0.0 全方位の品質磨き**（2026-06-14）。8観点の監査＋差分の敵対的レビュー（ワークフロー）を経て実施:
   - **効果音＋触覚（既定OFF）**: Web Audio API 合成のみ（ファイル/CDN不使用＝CSP安全）。ヘッダーの🔔/🔇トグル（`localStorage: fujiCall_sfx`）で音と触覚を一括ON/OFF。`_ac()`遅延生成→`playTone`/`playChord`→`sfx(name)`（70msスロットル・sine/triangle・gain≤0.16）。`tap/success/levelup/badge/copy/recStart/recStop/error` を生成完了・コピー・録音・レベルアップ・バッジ・タップ等にフック。**autoplay対策で `init()` では音を鳴らさない**（初回は必ずユーザー操作起点）
   - **配色をふじキュンのラベンダー基調に**: `--accent` をピンク#f06292→#9575cd（ほっぺの色）、小ラベル用に `--primary-text`(#00747f)・`--accent-deep`(#5e35b1) を追加しAAコントラスト確保。暗色の成長カードも紫系へ調和
@@ -76,7 +81,7 @@
 
 ## 主要機能
 
-1. **台本生成** — 通話相手（庁内/庁外）× 敬語レベル（謙譲語/標準/フレンドリー）× 目的テキストから Groq が台本を生成
+1. **台本生成** — ①自由記述 → ②AIが不足項目だけ質問（社内/社外・初回など）→ ③敬語レベル（謙譲語/標準/フレンドリー）→ Groq が台本を生成。生成後は不安アドバイス・敬語微調整つき作り直しも可能
 2. **音読練習モード** — 録音 → Whisper 文字起こし → Hume AI 声分析 → ふじキュン♡フィードバック
 3. **成長ゲーミフィケーション** — レベル・バッジシステム（localStorage）
 4. **クラウド同期** — Supabase マジックリンク認証後、台本履歴・統計をクロスデバイス共有
@@ -173,8 +178,14 @@ IIFE 内の主要な変数・関数:
   burstHearts(opts)/burstConfetti() — ハート／レベルアップ紙吹雪（reduced-motionでJSガード）
   showThinking()/renderScriptBox()/revealEl()/focusScript() — 台本リベール・〇〇強調・フォーカス
   applyGeneratedScript()/onGenError() — 生成成功/失敗の共通処理（失敗時は直前台本を復元）
+  renderDescribeStep()/submitDescribe() — Q&A①自由記述
+  fetchClarify()/parseClarify()/renderClarifyStep() — Q&A②AIが不足項目だけ質問（失敗時 FALLBACK_QS）
+  renderToneStep()/dlgFinish() — Q&A③敬語レベル→生成ボタン
+  buildPromptFromCtx()/inferCaller() — S.genCtx から生成プロンプト・通話相手推定
   generate()                — 「作り直す」: S.lastPrompt（無ければ buildPrompt）で再生成
-  generateFromDialog()      — Q&Aから生成。成功時のみ openDialog() でリセット
+  generateFromDialog()      — Q&Aから生成。S.genCtx 保持。成功時のみ openDialog() でリセット
+  adjustTone(dir)           — 同内容のまま敬語だけ変えて再生成（🙇もっと丁寧に/😊やわらかく）
+  showAdvice()/hideAdvice()/handleConcern() — 生成後の不安アドバイス（台本とは別の励まし＋コツ）
   releaseMic()/abortRecording() — 録音中/取得待ち/解析中のマイク確実解放
   mergeStats()              — ローカル/クラウド統計の非破壊マージ
   updateStreak()/preloadFujiPoses() — 連続来訪・ポーズ画像先読み
@@ -198,6 +209,7 @@ IIFE 内の主要な変数・関数:
 
 ## 過去の経緯
 
+- **2026-06-14: Q&Aフロー再設計（自由記述 → AIが不足質問 → 敬語）**。ユーザー指摘（固定4択の軸が混在し社内/社外のお詫びを表現できない／「難しい点」が台本のどこに効くか不明／回答を編集して作り直せない）を受けて再設計。①自由記述、②記述を Groq に渡し不足項目だけ AI が質問（`fetchClarify`/`parseClarify`、寛容なJSON抽出＋12秒タイムアウト＋`FALLBACK_QS`、`response_format` は使わず堅牢化）、③敬語レベル。「難しい点」は生成後の別カード `#fC_advice` に分離し台本とは別の励まし＋コツへ。「作り直す」は `S.genCtx` 保持＋`adjustTone()` で同内容のまま敬語だけ変えて再生成（🙇もっと丁寧に/😊やわらかく）。差分は6観点で敵対的レビューし確定19件（parseClarifyの寛容抽出＋選択肢正規化、clarifyタイムアウト、[]とnullの区別、履歴読込で genCtx/advice リセット、adjustToneの履歴フォールバック、アドバイスchip再有効化＋古い応答の競合防止、aria-live、44pxターゲット）を反映。デプロイ環境で「社内のミスのお詫び」を入力し、AIが社内/社外を質問→社内のお詫び台本が生成され、アドバイス・敬語微調整も動作することを確認
 - **2026-06-14: v4.0.0 レビュー指摘の修正（差分の敵対的レビューで確定した7件）**
   - **コントラスト（AA 4.5:1 未満の文字 4 箇所）**: `.fC_report-btn.soft` の文字色を `--accent-deep`(#5e35b1) に、`link_sent` 見出し・`.fC_modal-desc a`・`.fC_followup-chip:hover` の文字色を `--primary-text`(#00747f) に。ボーダーは装飾（3:1 で可）なので `--accent`/`--primary` のまま
   - **デモCSS残存**: 機能削除後も残っていた `.fC_demo-*` / `.fC_btn-demo`（旧紫パレット約60行）を削除し、デモ subsystem の撤去を完了
