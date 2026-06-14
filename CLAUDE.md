@@ -125,6 +125,12 @@ MVPv2/
 │       ├── bow.png         # おじぎ（いってらっしゃい）
 │       ├── sparkle.png     # きらきら（タップ反応）
 │       └── surprise.png    # おどろき（タップ反応）
+│   └── icons/              # アプリアイコン・favicon（ふじキュンをパステル背景に合成）
+│       ├── apple-touch-icon.png  # 180px・iOSホーム画面
+│       ├── icon-192.png / icon-512.png  # Android/PWA
+│       ├── favicon-16.png / favicon-32.png
+│       └── site.webmanifest
+├── favicon.ico             # ルート（ブラウザ自動取得・16/32/48）
 ├── api/
 │   ├── config.js           # Supabase URL/anon key + hasHumeKey を返す
 │   ├── generate.js         # Groq テキスト生成プロキシ
@@ -209,6 +215,7 @@ IIFE 内の主要な変数・関数:
 
 ## 過去の経緯
 
+- **2026-06-14: アプリアイコン／favicon を追加**。「ホーム画面に追加」でアイコンが無かった問題に対応。ふじキュン（`normal.png`）をラベンダー→ピンクのパステル背景に合成した**不透明**正方形アイコンを Pillow で生成し `assets/icons/` に配置（apple-touch-icon 180／icon 192・512／favicon 16・32）。ルートに `favicon.ico`（16/32/48）。`<head>` に `icon`/`apple-touch-icon`/`manifest`/`theme-color(#9575cd)`/`apple-mobile-web-app-*` を追加し、`site.webmanifest`（standalone・名称「ふじキュン♡」）も用意。全て同一オリジン（CSP `img-src 'self'` 内）。ローカルで 200 配信・manifest 解析を確認（iOS実機のホーム画面追加はデプロイ後に要確認）
 - **2026-06-14: Q&Aフロー再設計（自由記述 → AIが不足質問 → 敬語）**。ユーザー指摘（固定4択の軸が混在し社内/社外のお詫びを表現できない／「難しい点」が台本のどこに効くか不明／回答を編集して作り直せない）を受けて再設計。①自由記述、②記述を Groq に渡し不足項目だけ AI が質問（`fetchClarify`/`parseClarify`、寛容なJSON抽出＋12秒タイムアウト＋`FALLBACK_QS`、`response_format` は使わず堅牢化）、③敬語レベル。「難しい点」は生成後の別カード `#fC_advice` に分離し台本とは別の励まし＋コツへ。「作り直す」は `S.genCtx` 保持＋`adjustTone()` で同内容のまま敬語だけ変えて再生成（🙇もっと丁寧に/😊やわらかく）。差分は6観点で敵対的レビューし確定19件（parseClarifyの寛容抽出＋選択肢正規化、clarifyタイムアウト、[]とnullの区別、履歴読込で genCtx/advice リセット、adjustToneの履歴フォールバック、アドバイスchip再有効化＋古い応答の競合防止、aria-live、44pxターゲット）を反映。デプロイ環境で「社内のミスのお詫び」を入力し、AIが社内/社外を質問→社内のお詫び台本が生成され、アドバイス・敬語微調整も動作することを確認
 - **2026-06-14: Q&A再設計のレビュー確定修正（敵対的レビューで確定した19件→主な実装）**
   - **parseClarify の寛容な抽出**: コードフェンス除去＋「questions を含む候補」優先＋複数候補トライ。前置きや余分な括弧があっても AI の質問を取りこぼさない（従来の貪欲 `{[\s\S]*}` だと先頭に `{` があると失敗→フォールバックに落ちていた）
