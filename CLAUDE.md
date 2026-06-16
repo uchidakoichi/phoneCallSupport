@@ -28,8 +28,8 @@
   - **演出**: 台本リベール（`fC_reveal`）、全タップ要素の`:active`、レベルアップ紙吹雪（`burstConfetti`）、考え中の3点ドット、Q&A選択の確定フラッシュ
   - **A11y/モバイル**: reduced-motion を全アニメに拡張＋JSパーティクルもガード、`safe-area-inset`、Q&Aの最初の選択肢へフォーカス＋`role=group`、認証モーダルのフォーカストラップ＋復帰、結果アクションを2×2グリッド＋44pxタッチターゲット、iOS入力ズーム抑止（16px）
   - **バグ/堅牢化**: デモ機能一式削除、**「作り直す」は直前/履歴の条件を再利用**、**生成失敗時はQ&A回答を保持（`openDialog()`は成功時のみ）**、録音パネルを閉じたらマイク確実解放（取得待ち・解析中も中断）、クラウド統計を**非破壊マージ**（`mergeStats`＋`_syncing`再入ガード＋履歴重複排除）、ポーズ画像の先読み、連続来訪ストリーク
-- **AIは Groq のみ**（Gemini・OpenAI は廃止）。全リクエストはサーバープロキシ経由
-- **ユーザー入力 API キーはゼロ**。Groq・Hume・Supabase はすべて Vercel 環境変数で管理
+- **AIは Gemini（gemini-2.5-flash）のみに一本化**（2026-06-16）。Groq・Hume を廃止。理由: **Hume Expression Measurement API が 2026-06-14 にサンセット**（声分析が動かなくなった）。代替検討の結果、無料枠があり音声をネイティブ入力できる Gemini に台本生成も含めて統合。台本生成・clarify・アドバイス・フォローアップは `/api/generate`、音読練習は `/api/analyze-voice`（音声→文字起こし＋声の評価をJSON 1コール）。**録音は webm/opus だが Gemini は非対応のため、クライアントで `blobToWav()` が 16kHz mono WAV に変換**（Vercel 4.5MB ボディ上限対策で最長90秒）。Groq の即時性は失うが日本語品質とコードの単純さは向上。**無料枠は入力/出力がモデル改善に利用される**（MVP用途のため許容と判断）
+- **ユーザー入力 API キーはゼロ**。Gemini・Supabase はすべて Vercel 環境変数で管理
 - **クラウド同期はログインコード認証**（2026-06-14 にマジックリンクから再変更）。理由: **ホーム画面アプリ（iOS standalone PWA）ではメール内リンクが必ず Safari 側で開き**、standalone とは別のストレージ領域のためアプリ内でセッションを受け取れない（マジックリンクは原理的に完結しない）。リダイレクト不要のコード入力なら standalone でも完結する。フロー: `signInWithOtp({email})` 送信 → メールのコードを入力 → `verifyOtp({email, token, type:'email'})` → `onAuthStateChange(SIGNED_IN)` でログイン完了。`emailRedirectTo` も残しているのでブラウザではメール内リンクからもログイン可。**コード桁数は Supabase の設定依存（このプロジェクトは8桁）**。入力欄は `maxlength=10`・検証は `\d{4,10}` で桁数変更にも耐える（以前 `maxlength=6` で8桁が切り詰められ検証失敗するバグを修正）。**前提: Supabase のメールテンプレートに `{{ .Token }}` を含める設定**（既定はリンクのみ送るため）
 - **アプリアイコン・favicon を追加し PWA（standalone）対応**（2026-06-14）。「ホーム画面に追加」時のアイコン無し問題に対応。ふじキュンをパステル背景に合成した不透明アイコンを `assets/icons/`（apple-touch-icon 180／icon 192・512／favicon 16・32）とルート `favicon.ico` に配置。`<head>` に `icon`/`apple-touch-icon`/`manifest`/`theme-color(#9575cd)`/`apple-mobile-web-app-*` を追加、`site.webmanifest`（standalone・名称「ふじキュン♡」）。standalone を有効化したことが上記「ログインコード認証」への変更理由（マジックリンクが standalone で完結しないため）
 - **設定モーダル・⚙️ボタンを削除**。テンプレートをハードルの高いビジネス場面に差し替え
@@ -48,7 +48,8 @@
 - **【要対応】Supabase のメールテンプレートにログインコード `{{ .Token }}` を含めること**（ダッシュボード → Authentication → Email Templates → Magic Link/OTP）。未設定だとメールにコードが載らず、ホーム画面アプリでのコード入力ログインが成立しない。ブラウザでのリンクログインも併用するなら Redirect URLs に本番 URL の登録も必要。コード桁数は Authentication の設定依存（現状8桁。アプリ側は4〜10桁を許容）
 - **コード認証の実機確認（コード送信→入力→ログイン→同期）はデプロイ後に要確認**。特に iOS ホーム画面アプリ（standalone）で完結するかを確認
 - `onAuthStateChange` の `SIGNED_IN` 判定でログイン完了トーストを出しているが、古い supabase-js だと通常リロード時にも `SIGNED_IN` が発火する版があり、その場合リロードのたびにトーストが出る可能性あり（現行の `@supabase/supabase-js@2` は `INITIAL_SESSION` を発火するため問題なし）
-- HUME_API_KEY は Vercel に未設定の可能性あり（声分析が動かない場合は要確認）
+- **【要対応】Vercel に `GEMINI_API_KEY` を設定し、不要になった `GROQ_API_KEY`/`HUME_API_KEY` を削除すること**。未設定だと台本生成・声分析の両方が 500 になる（全機能停止）。設定するまで本番デプロイしない
+- **Gemini 音声分析の実機確認が必要**（録音→WAV変換→文字起こし＋スコア表示）。特に iOS Safari の `MediaRecorder`/`decodeAudioData` で WAV 変換が通るか、90秒超の録音で 4.5MB 上限に当たらないかを確認
 - **ふじキュン公式イラストを公開リポジトリに同梱している**。非販売の本アプリは公式の利用条件（申請不要・クレジット付記）の範囲内だが、再配布扱いを避けたい場合はフォールバック絵文字運用に戻せる
 - ~~2026-06-14 のふじキュン演出は API を伴う一連の流れの本番通し確認が必要~~ → **本番で end-to-end 確認済み（2026-06-14）**：効果音トグル・Q&A→生成（入力反映）→台本リベール→〇〇強調→レベルアップ（お祝い＋紙吹雪＋ファンファーレ）→2×2アクション→コピー（おじぎ＋報告カード）まで通し、アプリ起因のコンソールエラーなし
 
@@ -62,9 +63,8 @@
 
 - **単一ファイル構成:** `index.html`（HTML + CSS + JS が一体）+ `api/` ディレクトリ（Vercel Serverless Functions）
 - **外部依存:** Supabase JS SDK（CDN）、Google Fonts（Noto Sans JP）
-- **AI:** Groq（llama-3.3-70b-versatile）— サーバー経由のみ
-- **音声文字起こし:** Groq Whisper — サーバー経由のみ
-- **声分析:** Hume AI — サーバー経由のみ（HUME_API_KEY 設定時のみ有効）
+- **AI:** Google Gemini（gemini-2.5-flash）— サーバー経由のみ
+- **音声文字起こし＋声分析:** Gemini 2.5 Flash（音声をネイティブ入力）— サーバー経由のみ（`/api/analyze-voice` が1コールで文字起こし＋声の評価を返す）
 - **クラウド同期:** Supabase（共有プロジェクト。ユーザーは URL/キー不要）
 
 ---
@@ -73,17 +73,18 @@
 
 | 変数名 | 用途 | 必須 |
 |---|---|---|
-| `GROQ_API_KEY` | 台本生成・Whisper 文字起こし | ✅ |
+| `GEMINI_API_KEY` | 台本生成・音読練習の文字起こし＆声分析 | ✅ |
 | `SUPABASE_URL` | クラウド同期 | ✅ |
 | `SUPABASE_ANON_KEY` | クラウド同期 | ✅ |
-| `HUME_API_KEY` | 音読練習の感情分析 | 任意 |
+
+> **取得先:** https://aistudio.google.com/apikey （無料枠：1,500 req/日・15 RPM・クレカ不要）。**無料枠は入力/出力がモデル改善に利用される**点に注意（MVP用途のため許容）。
 
 ---
 
 ## 主要機能
 
 1. **台本生成** — ①自由記述 → ②AIが不足項目だけ質問（社内/社外・初回など）→ ③敬語レベル（謙譲語/標準/フレンドリー）→ Groq が台本を生成。生成後は不安アドバイス・敬語微調整つき作り直しも可能
-2. **音読練習モード** — 録音 → Whisper 文字起こし → Hume AI 声分析 → ふじキュン♡フィードバック
+2. **音読練習モード** — 録音 → クライアントで WAV(16kHz mono) 変換 → Gemini が文字起こし＋声の評価（自信度/不安度/エネルギー/落ち着き）を1コールで返す → ふじキュン♡フィードバック
 3. **成長ゲーミフィケーション** — レベル・バッジシステム（localStorage）
 4. **クラウド同期** — Supabase ログインコード認証後、台本履歴・統計をクロスデバイス共有
 
@@ -133,12 +134,9 @@ MVPv2/
 │       └── site.webmanifest
 ├── favicon.ico             # ルート（ブラウザ自動取得・16/32/48）
 ├── api/
-│   ├── config.js           # Supabase URL/anon key + hasHumeKey を返す
-│   ├── generate.js         # Groq テキスト生成プロキシ
-│   ├── transcribe.js       # Groq Whisper 文字起こしプロキシ
-│   ├── hume-submit.js      # Hume AI ジョブ送信プロキシ
-│   ├── hume-status.js      # Hume AI ジョブ状態確認プロキシ
-│   └── hume-predictions.js # Hume AI 結果取得プロキシ
+│   ├── config.js           # Supabase URL/anon key + hasVoiceKey を返す
+│   ├── generate.js         # Gemini テキスト生成プロキシ
+│   └── analyze-voice.js    # Gemini 音声分析プロキシ（文字起こし＋声の評価をJSONで返す）
 ├── .env.local.example      # 環境変数テンプレート
 ├── .gitignore              # .vercel / .claude を除外
 ├── CLAUDE.md               # このファイル
@@ -156,7 +154,7 @@ IIFE 内の主要な変数・関数:
   DEMO_TEMPLATES            — デモモード用サンプル台本（6種、UI非表示だが残存）
   S                         — アプリ状態（callerType, keigoLevel, demoMode 等）
   _sb / _sbUser             — Supabase クライアント・ログインユーザー
-  _humeEnabled              — Hume AI が有効かどうか（api/config から取得）
+  _voiceEnabled             — 声分析(Gemini)が有効かどうか（api/config の hasVoiceKey）
   _authStep / _authEmail    — コード認証フロー状態（idle / code_sent）
   FUJI                      — ふじキュンのポーズ→画像/絵文字フォールバック マップ
   setFujiPose(pose)         — マスコット画像 #fC_mascotImg を pose に切り替え（pop アニメ）
@@ -167,14 +165,13 @@ IIFE 内の主要な変数・関数:
   showReport()/handleReport()/afterCopy() — 電話後の報告カード（#fC_report）制御
   loadStats() / saveStats() — ゲーミフィケーション統計
   renderGrowth()            — 成長カード描画（アバターは #fC_avatar の <img>）
-  callGroqProxy()           — /api/generate を呼ぶ
-  callAPI()                 — callGroqProxy() に委譲
+  callGemini()              — /api/generate を呼ぶ（旧 callGroqProxy）
+  callAPI()                 — callGemini() に委譲
   callWithRetry()           — レート制限時の自動リトライ
   generate()                — 台本生成
   buildPrintDoc()           — 印刷用ドキュメント（#fC_printDoc）を生成。印刷ボタン押下時に呼ぶ
-  transcribeWithWhisper()   — /api/transcribe を呼ぶ
-  analyzeWithHume()         — /api/hume-submit → pollHumeJob()
-  pollHumeJob()             — /api/hume-status + /api/hume-predictions でポーリング
+  analyzeVoice()            — WAV変換→/api/analyze-voice を呼び {transcript, scores} を返す
+  blobToWav()/encodeWav()   — 録音(webm/opus)を 16kHz mono WAV に変換（Gemini対応・Vercel 4.5MB上限対策に最長90秒）
   renderPracticeResult()    — 練習結果描画
   initSupabase()            — /api/config フェッチ → _humeEnabled 設定 → Supabase 初期化
   openAuthModal()           — 認証（ログインコード）モーダルを開く。verifyOtp でコード検証
@@ -216,6 +213,7 @@ IIFE 内の主要な変数・関数:
 
 ## 過去の経緯
 
+- **2026-06-16: AIを全面的に Gemini 2.5 Flash へ統合（Groq・Hume を廃止）**。きっかけは Hume Expression Measurement API のサンセット（2026-06-14 に API 完全終了 → 声分析が動かなくなった）。代替を検討（Deepgram はセンチメントが英語のみ＆テキストベースで不適、HF SER は無料サーバーレス推論が不安定）し、**無料枠があり音声をネイティブ入力できる Gemini に台本生成も含めて一本化**することにユーザーが決定（MVPのため無料枠の学習利用は許容）。実装: (1) `api/generate.js` を Gemini `generateContent`（gemini-2.5-flash・`thinkingBudget:0`・maxOutputTokens 1024・prompt上限 3000→8000）に置換、(2) `api/transcribe.js`＋`api/hume-*.js`(3本) を削除し `api/analyze-voice.js` を新設（音声を受け取り `responseSchema` で `{transcript, confidence, anxiety, energy, calmness, impressions}` を強制し `{transcript, scores}` を返す）、(3) `api/config.js` の `hasHumeKey`→`hasVoiceKey`(=`!!GEMINI_API_KEY`)、(4) クライアントは `callGroqProxy`→`callGemini`、`_humeEnabled`→`_voiceEnabled`、音声系4関数(`transcribeWithWhisper`/`analyzeWithHume`/`pollHumeJob`/`extractHumeScores`)を `analyzeVoice()` 1本に集約しポーリングを撤去。**Gemini が webm/opus 非対応**のため `blobToWav()`/`encodeWav()` を追加し録音を 16kHz mono WAV へ変換（OfflineAudioContext でリサンプル、Vercel 4.5MB ボディ上限対策で最長90秒に truncate）。inline JS と API の構文チェック済み。**Vercel 環境変数の差し替え（GEMINI_API_KEY 追加・GROQ/HUME 削除）が未了のため未デプロイ**
 - **2026-06-14: 認証をマジックリンク→ログインコード入力に再変更**（ホーム画面アプリ対応）。ユーザー報告: 「ホーム画面に追加」した standalone アプリでマジックリンクをタップすると Safari で開いてしまい同期できない。原因は iOS standalone PWA がメール内リンクを Safari（別ストレージ領域）で開く仕様。リダイレクト不要のコード入力 UI を復活（`code_sent` ステート、`#fC_authCode` 入力、`verifyOtp({email, token, type:'email'})`）。standalone（`apple-mobile-web-app-capable`/`display:standalone`）は維持。`emailRedirectTo` は残しブラウザのリンクログインも併用可。**前提: Supabase メールテンプレに `{{ .Token }}` を含める設定が必要**。当初 6桁前提（`maxlength=6`）だったが Supabase の実コードは**8桁**だったため切り詰めで検証失敗 → `maxlength=10`・検証 `\d{4,10}`・表示「8桁」に修正（桁数変更にも耐える）
 - **2026-06-14: アプリアイコン／favicon を追加**。「ホーム画面に追加」でアイコンが無かった問題に対応。ふじキュン（`normal.png`）をラベンダー→ピンクのパステル背景に合成した**不透明**正方形アイコンを Pillow で生成し `assets/icons/` に配置（apple-touch-icon 180／icon 192・512／favicon 16・32）。ルートに `favicon.ico`（16/32/48）。`<head>` に `icon`/`apple-touch-icon`/`manifest`/`theme-color(#9575cd)`/`apple-mobile-web-app-*` を追加し、`site.webmanifest`（standalone・名称「ふじキュン♡」）も用意。全て同一オリジン（CSP `img-src 'self'` 内）。ローカルで 200 配信・manifest 解析を確認（iOS実機のホーム画面追加はデプロイ後に要確認）
 - **2026-06-14: Q&Aフロー再設計（自由記述 → AIが不足質問 → 敬語）**。ユーザー指摘（固定4択の軸が混在し社内/社外のお詫びを表現できない／「難しい点」が台本のどこに効くか不明／回答を編集して作り直せない）を受けて再設計。①自由記述、②記述を Groq に渡し不足項目だけ AI が質問（`fetchClarify`/`parseClarify`、寛容なJSON抽出＋12秒タイムアウト＋`FALLBACK_QS`、`response_format` は使わず堅牢化）、③敬語レベル。「難しい点」は生成後の別カード `#fC_advice` に分離し台本とは別の励まし＋コツへ。「作り直す」は `S.genCtx` 保持＋`adjustTone()` で同内容のまま敬語だけ変えて再生成（🙇もっと丁寧に/😊やわらかく）。差分は6観点で敵対的レビューし確定19件（parseClarifyの寛容抽出＋選択肢正規化、clarifyタイムアウト、[]とnullの区別、履歴読込で genCtx/advice リセット、adjustToneの履歴フォールバック、アドバイスchip再有効化＋古い応答の競合防止、aria-live、44pxターゲット）を反映。デプロイ環境で「社内のミスのお詫び」を入力し、AIが社内/社外を質問→社内のお詫び台本が生成され、アドバイス・敬語微調整も動作することを確認

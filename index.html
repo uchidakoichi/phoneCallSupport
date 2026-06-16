@@ -1120,7 +1120,7 @@
   const VERSION   = "v4.0.0";
   const LS_HIST   = "fujiCall_history";
   const LS_STATS  = "fujiCall_stats";
-  var _humeEnabled = false;
+  var _voiceEnabled = false;
 
   var _sb     = null;
   var _sbUser = null;
@@ -1579,7 +1579,7 @@
   }
 
   /* ── API calls ──────────────────────────────── */
-  function callGroqProxy(prompt) {
+  function callGemini(prompt) {
     return fetch("/api/generate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -1598,7 +1598,7 @@
   }
 
   function callAPI(prompt) {
-    return callGroqProxy(prompt);
+    return callGemini(prompt);
   }
 
   /* 429 発生時に60秒待って1回だけリトライ（レート制限は1分単位でリセット） */
@@ -1901,14 +1901,15 @@
   }
 
   function analyzeRecording(blob) {
-    var p1 = transcribeWithWhisper(blob);
-    var p2 = _humeEnabled
-      ? analyzeWithHume(blob)
-      : Promise.resolve(null);
-
-    Promise.all([p1, p2]).then(function(res) {
+    if (!_voiceEnabled) {
+      D.recBtn.textContent = "🎤 録音開始";
+      D.recBtn.disabled    = false;
+      toast("😢 声の分析はいまおやすみ中キュン… 台本を見ながらもう一度読んでみてね♡", "warning", 5000);
+      return;
+    }
+    analyzeVoice(blob).then(function(res) {
       if (_cancelRec || !D.practice.classList.contains("visible")) return;  // 閉じられたパネルには描画しない
-      renderPracticeResult(res[0], res[1]);
+      renderPracticeResult(res.transcript, res.scores);
     }).catch(function(err) {
       console.error("[Practice]", err);
       if (!D.practice.classList.contains("visible")) return;
@@ -1918,90 +1919,80 @@
     });
   }
 
-  function transcribeWithWhisper(blob) {
-    return new Promise(function(resolve, reject) {
-      var reader = new FileReader();
-      reader.onload = function() {
-        var base64 = reader.result.split(",")[1];
-        fetch("/api/transcribe", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ audio: base64, mimeType: blob.type }),
-        }).then(function(r) { return r.json(); })
-          .then(function(d) { resolve(d.text || ""); })
-          .catch(reject);
-      };
-      reader.onerror = reject;
-      reader.readAsDataURL(blob);
-    });
-  }
-
-  function analyzeWithHume(blob) {
-    return new Promise(function(resolve, reject) {
-      var reader = new FileReader();
-      reader.onload = function() {
-        var base64 = reader.result.split(",")[1];
-        fetch("/api/hume-submit", {
-          method:  "POST",
-          headers: { "Content-Type": "application/json" },
-          body:    JSON.stringify({ audio: base64, mimeType: blob.type }),
-        }).then(function(r) { return r.json(); })
-          .then(function(d) {
-            if (d.error || !d.jobId) throw new Error(d.error || "No jobId");
-            return pollHumeJob(d.jobId);
-          })
-          .then(resolve)
-          .catch(reject);
-      };
-      reader.onerror = reject;
-      reader.readAsDataURL(blob);
-    });
-  }
-
-  function pollHumeJob(jobId) {
-    return new Promise(function(resolve, reject) {
-      var tries = 0;
-      var timer = setInterval(function() {
-        if (++tries > 30) { clearInterval(timer); reject(new Error("Hume timeout")); return; }
-        fetch("/api/hume-status?jobId=" + encodeURIComponent(jobId))
-          .then(function(r) { return r.json(); })
-          .then(function(d) {
-            if (d.status === "COMPLETED") {
-              clearInterval(timer);
-              fetch("/api/hume-predictions?jobId=" + encodeURIComponent(jobId))
-                .then(function(r) { return r.json(); })
-                .then(function(preds) { resolve(extractHumeScores(preds)); })
-                .catch(reject);
-            } else if (d.status === "FAILED") {
-              clearInterval(timer); reject(new Error("Hume job failed"));
-            }
-          }).catch(function() {});
-      }, 2000);
-    });
-  }
-
-  function extractHumeScores(preds) {
-    try {
-      var segs = preds[0].results.predictions[0].models.prosody.grouped_predictions[0].predictions;
-      var totals = {}, n = segs.length;
-      segs.forEach(function(seg) {
-        seg.emotions.forEach(function(e) { totals[e.name] = (totals[e.name] || 0) + e.score; });
+  /* 録音音声を文字起こし＋声の分析（Gemini が音声を直接聞いて JSON で返す） */
+  function analyzeVoice(blob) {
+    return blobToWav(blob).then(function(wav) {
+      return new Promise(function(resolve, reject) {
+        var reader = new FileReader();
+        reader.onload = function() {
+          var base64 = reader.result.split(",")[1];
+          fetch("/api/analyze-voice", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ audio: base64, mimeType: "audio/wav" }),
+          }).then(function(r) {
+            return r.json().then(function(d) {
+              if (!r.ok) throw new Error(d.error || "VOICE_ERROR");
+              resolve({ transcript: d.transcript || "", scores: d.scores || null });
+            });
+          }).catch(reject);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(wav);
       });
-      var avg = {};
-      Object.keys(totals).forEach(function(k) { avg[k] = totals[k] / n; });
-      var conf = ((avg["Determination"]||0) + (avg["Enthusiasm"]||0) + (avg["Calmness"]||0) + (avg["Interest"]||0)) / 4;
-      var anx  = (avg["Anxiety"]||0) * 0.7 + (avg["Distress"]||0) * 0.3;
-      var enrg = ((avg["Excitement"]||0) + (avg["Enthusiasm"]||0)) / 2;
-      var calm = avg["Calmness"] || 0;
-      var top5 = Object.entries(avg).sort(function(a,b){return b[1]-a[1];}).slice(0,5).map(function(e){return e[0];});
-      return {
-        confidence: Math.min(Math.round(conf * 300), 100),
-        anxiety:    Math.min(Math.round(anx  * 400), 100),
-        energy:     Math.min(Math.round(enrg * 300), 100),
-        calmness:   Math.min(Math.round(calm * 400), 100),
-        top5: top5,
-      };
-    } catch(e) { return null; }
+    });
+  }
+
+  /* 録音(webm/opus 等)を Gemini が受け付ける WAV(16kHz mono) に変換。
+     WHY: Gemini の音声入力は webm/opus 非対応。さらに Vercel の 4.5MB ボディ上限のため 16kHz mono・最長90秒に抑える */
+  function blobToWav(blob) {
+    return blob.arrayBuffer().then(function(ab) {
+      var AC = window.AudioContext || window.webkitAudioContext;
+      var ac = new AC();
+      return ac.decodeAudioData(ab).then(function(audioBuf) {
+        try { ac.close(); } catch (_) {}
+        var rate   = 16000;
+        var frames = Math.max(1, Math.ceil(audioBuf.duration * rate));
+        var OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+        var off = new OAC(1, frames, rate);
+        var src = off.createBufferSource();
+        src.buffer = audioBuf;
+        src.connect(off.destination);
+        src.start(0);
+        return off.startRendering().then(function(rendered) {
+          var data = rendered.getChannelData(0);
+          var max  = rate * 90;
+          if (data.length > max) data = data.subarray(0, max);
+          return encodeWav(data, rate);
+        });
+      });
+    });
+  }
+
+  function encodeWav(samples, sampleRate) {
+    var buffer = new ArrayBuffer(44 + samples.length * 2);
+    var view   = new DataView(buffer);
+    function wstr(off, s) { for (var i = 0; i < s.length; i++) view.setUint8(off + i, s.charCodeAt(i)); }
+    wstr(0, "RIFF");
+    view.setUint32(4, 36 + samples.length * 2, true);
+    wstr(8, "WAVE");
+    wstr(12, "fmt ");
+    view.setUint32(16, 16, true);
+    view.setUint16(20, 1, true);                 // PCM
+    view.setUint16(22, 1, true);                 // mono
+    view.setUint32(24, sampleRate, true);
+    view.setUint32(28, sampleRate * 2, true);    // byte rate
+    view.setUint16(32, 2, true);                 // block align
+    view.setUint16(34, 16, true);                // bits per sample
+    wstr(36, "data");
+    view.setUint32(40, samples.length * 2, true);
+    var off = 44;
+    for (var i = 0; i < samples.length; i++) {
+      var s = Math.max(-1, Math.min(1, samples[i]));
+      view.setInt16(off, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+      off += 2;
+    }
+    return new Blob([view], { type: "audio/wav" });
   }
 
   function renderPracticeResult(transcript, scores) {
@@ -2014,16 +2005,16 @@
       "【元の台本（抜粋）】",
       S.script.slice(0, 150),
       "",
-      "【実際に話した内容（Whisper文字起こし）】",
+      "【実際に話した内容（文字起こし）】",
       transcript || "（文字起こしなし）",
       "",
-      "【Hume AIによる声の分析】",
+      "【声の分析】",
       scores
-        ? "自信度:" + scores.confidence + "%, 不安度:" + scores.anxiety + "%, エネルギー:" + scores.energy + "%, 落ち着き:" + scores.calmness + "%, 声で感じた感情トップ5:" + scores.top5.join("・")
-        : "（音声分析なし・Whisperのみ）",
+        ? "自信度:" + scores.confidence + "%, 不安度:" + scores.anxiety + "%, エネルギー:" + scores.energy + "%, 落ち着き:" + scores.calmness + "%, 声で感じた印象:" + (scores.top5 || []).join("・")
+        : "（音声分析なし）",
     ].join("\n");
 
-    var feedbackCall = callGroqProxy(feedbackPrompt);
+    var feedbackCall = callGemini(feedbackPrompt);
     feedbackCall.then(function(feedback) {
       showPracticeResult(transcript, scores, feedback);
       var oneLine = feedback.replace(/\n/g, " ");
@@ -2179,7 +2170,7 @@
     fetch("/api/config")
       .then(function(r) { return r.json(); })
       .then(function(cfg) {
-        _humeEnabled = !!cfg.hasHumeKey;
+        _voiceEnabled = !!cfg.hasVoiceKey;
         if (!cfg.supabaseUrl || !cfg.supabaseAnonKey || !window.supabase) return;
         try {
           _sb = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseAnonKey);
@@ -2520,7 +2511,7 @@
     });
   }
 
-  // 自由記述から「不足している項目」だけを Groq に質問してもらう（失敗/遅延は null→フォールバック）
+  // 自由記述から「不足している項目」だけを AI に質問してもらう（失敗/遅延は null→フォールバック）
   function fetchClarify(text) {
     var prompt = [
       "あなたは電話台本づくりの聞き取りアシスタントです。",
@@ -2538,7 +2529,7 @@
       '{"questions":[{"q":"質問文","options":["選択肢1","選択肢2"]}]}',
       "不足が無ければ {\"questions\":[]} を返すこと。",
     ].join("\n");
-    var call = callGroqProxy(prompt)
+    var call = callGemini(prompt)
       .then(function(txt) { return parseClarify(txt); })
       .catch(function(e) { console.error("[FujiCall clarify]", e); return null; });
     var timeout = new Promise(function(resolve) { setTimeout(function(){ resolve(null); }, 12000); });
@@ -2732,7 +2723,7 @@
       "やさしく、絶対に否定しないこと。語尾は「キュン」「キュン♡」を自然に使うこと。",
       "電話の内容: " + (S.purpose || "（未入力）"),
     ].join("\n");
-    callGroqProxy(prompt).then(function(txt) {
+    callGemini(prompt).then(function(txt) {
       if (run !== _adviceRun) return;               // 別の台本/不安に切り替わっていたら破棄
       if (res) res.innerHTML = adviceCardHtml((txt || "").trim());
       mascot("不安なところ、いっしょに減らそうキュン♡", "love");
