@@ -2,7 +2,7 @@
 
 ## プロジェクト概要
 
-**FujiCall v4.0.0** — 電話かけ出しサポートアプリ「ふじキュン♡」  
+**FujiCall v6.0.0** — 電話かけ出しサポートアプリ「ふじキュン♡」  
 藤沢市マスコット「ふじキュン♡」が電話台本を生成してくれる Web アプリ。  
 ユーザーは API キーを一切入力せずに使える。
 
@@ -16,6 +16,14 @@
 ## 現在の状態
 
 ### 直近の決定事項
+- **v6.0.0 UI/UX 改善**（2026-07-01）。CSS/マークアップの精読レビューで挙げた7観点を実装し、本番で実機確認（デスクトップ幅・非破壊での結果画面確認）済み:
+  - **配色をラベンダー基調に統一**: これまで「ラベンダー基調」と謳いつつヘッダー・主要CTA・Q&A吹き出し・台本枠などの主役色がティール(`#0097a7`)だった不一致を解消。`--primary` を `#0097a7`→`#7e57c2`、`--primary-light` を `#e0f7fa`→`#ede7f6`、`--primary-text` を `#00747f`→`#5e35b1`（AA維持）、`--bg`/`--border`/`--shadow` も紫寄りに。ヘッダーグラデ・成長カード・練習パネル（ダーク→ダークパープル）・進捗バー・スコアバー低スコア色・**印刷スタイル**・入力フォーカスまでティール系を一掃。コピーは意味的に緑(`--success`)のまま残す
+  - **初回はQ&Aを成長カードより上に**: `#fC_main` を flex `order` で制御。新規(`stats.total=0`)は Q&A→成長カードの順、リピーター(`total>0`)は `init()` で `fC_returning` クラスを付与して成長カードを上に。初回コンバージョン（最初の台本生成到達）を優先
+  - **結果ボタンの階層化**: 従来の均等2×2をやめ、`.fC_act-btn--copy` を `grid-column:1/-1`＋高さ54pxの全幅主ボタンに、作り直す/音読練習を2列、`.fC_act-btn--print` を全幅・高さ42pxの控えめボタンに。primary→secondary→tertiary の視線誘導を明確化
+  - **フォローアップ本文の折り返し**: `.fC_followup-card-text` の `word-break:break-all`→`overflow-wrap:anywhere`（日本語の助詞途中改行を解消）
+  - **録音の経過/上限90秒を可視化**: 練習モードで「録音中 0:12 / 1:30」を250ms間隔で表示し、`REC_MAX=90` 秒で自動停止（トースト通知）。`startRecTimer()`/`stopRecTimer()`/`fmtSec()` を追加、`startRecording`/`stopRecording`/`abortRecording` に組み込み。ヒントに「（最大90秒）」明記
+  - **ヘッダーアイコンの発見性**: 🔔/☁️ に文字ラベル（音・同期）を追加。ただし狭いスマホでタイトルと衝突するため**ラベルは `@media(min-width:520px)` のみ表示**、それ未満は従来の丸44pxアイコンのまま（既存レイアウト維持で崩れリスクなし）。`updateSoundBtn()` は `#fC_soundIcon` span のみ更新に変更。未ログインのリピーターには `maybeCloudHint()` が**一度だけ**（`localStorage: fujiCall_cloudHintSeen`）同期の存在をトーストで案内
+  - **a11y/読みやすさ**: 装飾的で毎タップ発火する**マスコットひとことの `aria-live` を除去**（状態変化はトースト等が既に読み上げ）。Q&Aチャットの `max-height` を 300px→60vh に緩和。本文フォントを微増（吹き出し0.875→0.92rem、台本枠0.92→0.98rem、マスコット0.875→0.92rem）
 - **Q&Aを「自由記述 → AIが不足質問 → 敬語調整」に再設計**（2026-06-14）。固定4択（場面の軸が混在し、社内/社外どちらにもある「お詫び」を表現できなかった）を廃止。
   - ① 自由記述（どんな電話か）→ ② その記述を Groq に渡し、`fetchClarify()`/`parseClarify()` が**不足している項目だけ**を質問として返す（1問ずつ提示。`callGroqProxy` で JSON 指示、寛容な抽出＋12秒タイムアウト、失敗/遅延は固定質問 `FALLBACK_QS` へフォールバック）→ ③ 敬語レベル → 生成
   - 「難しいと感じる点」は台本プロンプトから除外し、**生成後の別カード `#fC_advice`** へ移動。不安を選ぶと `handleConcern()` が**台本とは別の励まし＋具体的コツ**を Groq で返す（「特にない」は API を呼ばず即返答）
@@ -214,6 +222,7 @@ IIFE 内の主要な変数・関数:
 
 ## 過去の経緯
 
+- **2026-07-01: v6.0.0 UI/UX 改善**。CLAUDE.md をレビュー起点に、CSS/マークアップを精読して挙げた UI/UX 改善7観点をユーザー承認のうえ実装。(1) 配色をラベンダー基調に統一（`--primary` を `#0097a7`→`#7e57c2` ほか、ヘッダー/成長カード/練習パネル/進捗・スコアバー/印刷/入力フォーカスのティール系を一掃、コピーは意味的に緑を維持）、(2) 初回(`stats.total=0`)は Q&A を成長カードより上に・リピーターは成長カードを上に（`#fC_main` の flex `order`＋`init()` で `fC_returning` 付与）、(3) 結果ボタンを階層化（コピー=全幅54px主ボタン／作り直す・音読練習=2列／印刷=全幅42px控えめ）、(4) フォローアップ本文を `word-break:break-all`→`overflow-wrap:anywhere`、(5) 録音の経過/上限を可視化「録音中 0:12 / 1:30」＋`REC_MAX=90`秒で自動停止（`startRecTimer`/`stopRecTimer`/`fmtSec` 追加）、(6) ヘッダー🔔/☁️に文字ラベル（`@media(min-width:520px)`のみ表示・スマホは従来の丸アイコン維持、`updateSoundBtn` は `#fC_soundIcon` のみ更新）＋未ログインのリピーターに一度きりの同期案内 `maybeCloudHint()`（`localStorage: fujiCall_cloudHintSeen`）、(7) 装飾的なマスコットひとことの `aria-live` 除去・Q&Aチャット `max-height` 300px→60vh・本文フォント微増。inline JS と API 3本の構文チェック済み。**本番デプロイ済み**、拡張ブラウザで実機確認（配色統一・リピーターの並び順・結果ボタン階層をデスクトップ幅で確認、結果カードは非破壊描画で検証）。**制約**：ブラウザツールの `resize_window` が CSS ビューポート（1253px固定）に効かず、狭いスマホ幅の実描画は未確認だが、モバイルはラベル非表示＝従来レイアウトのため崩れリスクなし。バージョンを v6.0.0 に統一
 - **2026-06-16: AIを全面的に Gemini 2.5 Flash へ統合（Groq・Hume を廃止）**。きっかけは Hume Expression Measurement API のサンセット（2026-06-14 に API 完全終了 → 声分析が動かなくなった）。代替を検討（Deepgram はセンチメントが英語のみ＆テキストベースで不適、HF SER は無料サーバーレス推論が不安定）し、**無料枠があり音声をネイティブ入力できる Gemini に台本生成も含めて一本化**することにユーザーが決定（MVPのため無料枠の学習利用は許容）。実装: (1) `api/generate.js` を Gemini `generateContent`（gemini-2.5-flash・`thinkingBudget:0`・maxOutputTokens 1024・prompt上限 3000→8000）に置換、(2) `api/transcribe.js`＋`api/hume-*.js`(3本) を削除し `api/analyze-voice.js` を新設（音声を受け取り `responseSchema` で `{transcript, confidence, anxiety, energy, calmness, impressions}` を強制し `{transcript, scores}` を返す）、(3) `api/config.js` の `hasHumeKey`→`hasVoiceKey`(=`!!GEMINI_API_KEY`)、(4) クライアントは `callGroqProxy`→`callGemini`、`_humeEnabled`→`_voiceEnabled`、音声系4関数(`transcribeWithWhisper`/`analyzeWithHume`/`pollHumeJob`/`extractHumeScores`)を `analyzeVoice()` 1本に集約しポーリングを撤去。**Gemini が webm/opus 非対応**のため `blobToWav()`/`encodeWav()` を追加し録音を 16kHz mono WAV へ変換（OfflineAudioContext でリサンプル、Vercel 4.5MB ボディ上限対策で最長90秒に truncate）。inline JS と API の構文チェック済み。**Vercel 環境変数を差し替え（GEMINI_API_KEY 追加・GROQ/HUME 削除）て本番デプロイ・end-to-end 動作確認済み（2026-06-16）**
 - **2026-06-14: 認証をマジックリンク→ログインコード入力に再変更**（ホーム画面アプリ対応）。ユーザー報告: 「ホーム画面に追加」した standalone アプリでマジックリンクをタップすると Safari で開いてしまい同期できない。原因は iOS standalone PWA がメール内リンクを Safari（別ストレージ領域）で開く仕様。リダイレクト不要のコード入力 UI を復活（`code_sent` ステート、`#fC_authCode` 入力、`verifyOtp({email, token, type:'email'})`）。standalone（`apple-mobile-web-app-capable`/`display:standalone`）は維持。`emailRedirectTo` は残しブラウザのリンクログインも併用可。**前提: Supabase メールテンプレに `{{ .Token }}` を含める設定が必要**。当初 6桁前提（`maxlength=6`）だったが Supabase の実コードは**8桁**だったため切り詰めで検証失敗 → `maxlength=10`・検証 `\d{4,10}`・表示「8桁」に修正（桁数変更にも耐える）
 - **2026-06-14: アプリアイコン／favicon を追加**。「ホーム画面に追加」でアイコンが無かった問題に対応。ふじキュン（`normal.png`）をラベンダー→ピンクのパステル背景に合成した**不透明**正方形アイコンを Pillow で生成し `assets/icons/` に配置（apple-touch-icon 180／icon 192・512／favicon 16・32）。ルートに `favicon.ico`（16/32/48）。`<head>` に `icon`/`apple-touch-icon`/`manifest`/`theme-color(#9575cd)`/`apple-mobile-web-app-*` を追加し、`site.webmanifest`（standalone・名称「ふじキュン♡」）も用意。全て同一オリジン（CSP `img-src 'self'` 内）。ローカルで 200 配信・manifest 解析を確認（iOS実機のホーム画面追加はデプロイ後に要確認）
