@@ -30,22 +30,22 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <style>
     :root {
-      --primary: #0097a7;
-      --primary-light: #e0f7fa;
-      --primary-text: #00747f;            /* AA-contrast teal for small labels on white */
+      --primary: #7e57c2;                 /* ふじキュン基調のラベンダー（主役色） */
+      --primary-light: #ede7f6;
+      --primary-text: #5e35b1;            /* AA-contrast purple for small labels on white */
       --accent: #9575cd;                  /* ふじキュンのほっぺのラベンダー */
       --accent-light: #ede7f6;
       --accent-deep: #5e35b1;             /* AA-contrast purple for small text */
-      --bg: #f0f9ff;
+      --bg: #f6f4fc;
       --surface: #ffffff;
       --text: #1a2332;
       --text-muted: #6b7280;
-      --border: #e2e8f0;
+      --border: #e5e0ef;
       --success: #10b981;
       --error: #ef4444;
       --warning: #f59e0b;
       --radius: 12px;
-      --shadow: 0 4px 24px rgba(0,151,167,0.12);
+      --shadow: 0 4px 24px rgba(126,87,194,0.14);
       --trans: 0.2s ease;
     }
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -62,13 +62,13 @@
 
     /* ── Header ── */
     .fC_header {
-      background: linear-gradient(135deg, #006064 0%, var(--primary) 50%, #00acc1 100%) !important;
+      background: linear-gradient(135deg, #5e35b1 0%, var(--primary) 55%, #9575cd 100%) !important;
       color: #fff !important;
       padding: 0.7em 1em !important;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      box-shadow: 0 2px 16px rgba(0,96,100,0.35);
+      box-shadow: 0 2px 16px rgba(94,53,177,0.35);
       position: sticky;
       top: 0;
       z-index: 100;
@@ -100,16 +100,23 @@
       height: 44px !important;
       min-width: 44px;
       cursor: pointer;
-      font-size: 1.15rem;
+      font-size: 1rem;
       display: flex;
       align-items: center;
       justify-content: center;
+      gap: 0.3em;
       transition: background var(--trans);
       -webkit-tap-highlight-color: transparent;
       color: inherit;
     }
+    .fC_icon-label { display: none; font-size: 0.72rem; font-weight: 600; white-space: nowrap; }
     @media (hover: hover) {
       .fC_icon-btn:hover { background: rgba(255,255,255,0.32) !important; }
+    }
+    /* 画面に余裕がある時だけラベルを出す（狭いスマホではタイトルと衝突するため） */
+    @media (min-width: 520px) {
+      .fC_icon-btn { width: auto !important; border-radius: 22px; padding: 0 0.8em; }
+      .fC_icon-label { display: inline; }
     }
 
     /* ── Main ── */
@@ -123,6 +130,13 @@
       flex-direction: column;
       gap: 0.9em;
     }
+    /* 初回訪問者は本題(Q&A)を成長カードより上に。リピーターは成長カードを上に。 */
+    #fC_main > .fC_mascot  { order: 0; }
+    #fC_main > #fC_qaInline { order: 2; }
+    #fC_main > #fC_growth  { order: 3; }
+    #fC_main > #fC_result  { order: 4; }
+    #fC_main > #fC_history { order: 5; }
+    #fC_main.fC_returning > #fC_growth { order: 1; }
 
     /* ── Mascot bar ── */
     .fC_mascot {
@@ -136,9 +150,9 @@
       height: auto !important;
     }
     .fC_mascot-text {
-      font-size: 0.875rem;
+      font-size: 0.92rem;
       color: #4527a0;
-      line-height: 1.55 !important;
+      line-height: 1.6 !important;
     }
 
     /* ── Card ── */
@@ -167,13 +181,13 @@
     .fC_result { display: none; }
     .fC_result.visible { display: block; }
     .fC_script-box {
-      background: #f8fbff;
+      background: #faf9ff;
       border: 2px solid var(--primary-light);
       border-left: 4px solid var(--primary);
       border-radius: 0 10px 10px 0;
       padding: 1em;
-      font-size: 0.92rem;
-      line-height: 1.75;
+      font-size: 0.98rem;
+      line-height: 1.8;
       white-space: pre-wrap;
       word-break: break-word;
       color: var(--text);
@@ -209,19 +223,23 @@
       background: var(--success);
       color: #fff;
       border: none;
-      box-shadow: 0 2px 8px rgba(16,185,129,0.28);
-      order: -1;               /* primary action: top-left of the 2x2 grid */
+      box-shadow: 0 2px 10px rgba(16,185,129,0.32);
+      grid-column: 1 / -1;     /* primary action: full-width top row */
+      min-height: 54px !important;
+      font-size: 0.95rem;
     }
     .fC_act-btn--print {
       background: transparent;
       color: var(--text-muted);
       border: 2px solid var(--border);
+      grid-column: 1 / -1;     /* least prominent: quiet full-width bottom row */
+      min-height: 42px !important;
+      font-size: 0.8rem;
     }
     .fC_act-btn--regen {
       background: transparent;
       color: var(--primary-text);
       border: 2px solid var(--primary);
-      flex: 1.5;
     }
     @media (hover: hover) {
       .fC_act-btn--copy:hover  { background: #059669; }
@@ -233,7 +251,7 @@
     .fC_history { display: none; }
     .fC_history.visible { display: block; }
     .fC_hist-item {
-      background: #f8fbff;
+      background: #faf9ff;
       border: 1px solid var(--border);
       border-radius: 8px;
       padding: 0.6em 0.8em;
@@ -316,7 +334,7 @@
     .fC_input:focus, .fC_select:focus {
       outline: none;
       border-color: var(--primary);
-      box-shadow: 0 0 0 3px rgba(0,151,167,0.1);
+      box-shadow: 0 0 0 3px rgba(126,87,194,0.14);
     }
     .fC_select { cursor: pointer; }
     .fC_provider-hint {
@@ -334,7 +352,7 @@
     .fC_btn-primary {
       flex: 2;
       min-height: 46px !important;
-      background: linear-gradient(135deg, var(--primary), #00acc1);
+      background: linear-gradient(135deg, var(--primary), #9575cd);
       color: #fff;
       border: none;
       border-radius: 10px;
@@ -451,12 +469,12 @@
         text-align: center;
         padding-bottom: 0.7em;
         margin-bottom: 1.4em;
-        border-bottom: 3px double #0097a7;
+        border-bottom: 3px double #7e57c2;
       }
       .fC_pr-brand {
         font-size: 21pt;
         font-weight: 800;
-        color: #00838f;
+        color: #5e35b1;
         letter-spacing: 0.05em;
       }
       .fC_pr-sub {
@@ -471,8 +489,8 @@
         gap: 0.55em 1.8em;
         padding: 0.75em 1.1em;
         margin-bottom: 1.7em;
-        background: #f3fbfc;
-        border: 1px solid #cce9ec;
+        background: #f6f3fc;
+        border: 1px solid #ddd3ee;
         border-radius: 8px;
       }
       .fC_pr-meta-label {
@@ -480,7 +498,7 @@
         font-size: 7.5pt;
         font-weight: 700;
         letter-spacing: 0.12em;
-        color: #00838f;
+        color: #5e35b1;
         margin-bottom: 0.18em;
       }
       .fC_pr-meta-val {
@@ -492,7 +510,7 @@
       .fC_pr-sectlabel {
         font-size: 11pt;
         font-weight: 800;
-        color: #00838f;
+        color: #5e35b1;
         margin-bottom: 0.65em;
         padding-left: 0.1em;
       }
@@ -502,24 +520,24 @@
         white-space: pre-wrap;
         word-break: break-word;
         padding: 1.15em 1.35em;
-        border: 1px solid #cfd8dc;
-        border-left: 5px solid #0097a7;
+        border: 1px solid #d8d0e8;
+        border-left: 5px solid #7e57c2;
         border-radius: 0 8px 8px 0;
-        background: #fcffff;
+        background: #fdfcff;
         margin-bottom: 1.9em;
       }
       .fC_pr-blank {
-        color: #0097a7;
+        color: #5e35b1;
         font-weight: 700;
-        border-bottom: 1.5px dashed #4dd0e1;
+        border-bottom: 1.5px dashed #b39ddb;
         padding: 0 0.18em;
       }
 
       .fC_pr-followups { margin-bottom: 1.7em; }
       .fC_pr-fu {
         page-break-inside: avoid;
-        border: 1px solid #e2e8f0;
-        border-left: 4px solid #80cbc4;
+        border: 1px solid #e5e0ef;
+        border-left: 4px solid #b39ddb;
         border-radius: 0 6px 6px 0;
         padding: 0.75em 1.05em;
         margin-bottom: 0.9em;
@@ -527,7 +545,7 @@
       .fC_pr-fu-label {
         font-size: 10.5pt;
         font-weight: 800;
-        color: #00838f;
+        color: #5e35b1;
         margin-bottom: 0.45em;
       }
       .fC_pr-fu-text {
@@ -547,12 +565,12 @@
         font-size: 8.5pt;
         color: #9ca3af;
       }
-      .fC_pr-foot-tip { color: #00838f; font-weight: 600; }
+      .fC_pr-foot-tip { color: #5e35b1; font-weight: 600; }
     }
 
   /* ── Growth Card ── */
   .fC_growth {
-    background: linear-gradient(135deg, #1b4a52, #27566b, #3a3470) !important;
+    background: linear-gradient(135deg, #3a2e63, #4a3a7a, #5e35b1) !important;
     border-radius: var(--radius) !important;
     padding: 1em 1.1em !important;
     color: #fff;
@@ -581,7 +599,7 @@
   }
   .fC_prog-bar {
     height: 100%;
-    background: linear-gradient(90deg, #26c6da, #7e57c2, #ec88c5);
+    background: linear-gradient(90deg, #7e57c2, #9575cd, #ec88c5);
     border-radius: 10px;
     transition: width 0.7s cubic-bezier(.34,1.56,.64,1);
   }
@@ -618,17 +636,17 @@
   /* ── Practice Panel ── */
   .fC_practice {
     display: none;
-    background: linear-gradient(135deg, #0d1b2a, #1b2838, #0d1b2a) !important;
+    background: linear-gradient(135deg, #1a1030, #241a3d, #1a1030) !important;
     border-radius: var(--radius) !important;
     padding: 1.1em !important;
     color: #fff;
-    border: 1px solid rgba(99,179,237,0.25);
-    box-shadow: 0 4px 32px rgba(13,27,42,0.5);
+    border: 1px solid rgba(179,157,219,0.28);
+    box-shadow: 0 4px 32px rgba(26,16,48,0.5);
   }
   .fC_practice.visible { display: block; }
   .fC_prac-header {
     display: flex; align-items: center; justify-content: space-between;
-    font-size: 0.9rem; font-weight: 700; color: #63b3ed;
+    font-size: 0.9rem; font-weight: 700; color: #c5b3f0;
     margin-bottom: 0.6em;
   }
   .fC_prac-close {
@@ -651,14 +669,14 @@
   }
   .fC_prac-controls { display: flex; align-items: center; gap: 0.7em; margin-bottom: 0.75em; }
   .fC_rec-btn {
-    background: linear-gradient(135deg, #3182ce, #2b6cb0);
+    background: linear-gradient(135deg, #7e57c2, #5e35b1);
     color: #fff; border: none; border-radius: 10px;
     padding: 0.65em 1.3em; font-family: inherit; font-size: 0.9rem;
     font-weight: 700; cursor: pointer;
     transition: all 0.2s ease;
-    box-shadow: 0 2px 12px rgba(49,130,206,0.4);
+    box-shadow: 0 2px 12px rgba(126,87,194,0.4);
   }
-  .fC_rec-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(49,130,206,0.5); }
+  .fC_rec-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(126,87,194,0.5); }
   .fC_rec-btn:disabled { opacity: 0.6; cursor: not-allowed; }
   .fC_rec-btn.recording {
     background: linear-gradient(135deg, #e53e3e, #c53030);
@@ -706,7 +724,7 @@
   /* ── Q&A Inline ── */
   .fC_dialog-chat {
     display: flex; flex-direction: column; gap: 0.75em;
-    max-height: 300px; overflow-y: auto;
+    max-height: 60vh; overflow-y: auto;
     padding-bottom: 0.5em;
   }
   .fC_dialog-row { display: flex; gap: 0.55em; align-items: flex-start; }
@@ -715,8 +733,8 @@
   .fC_dialog-bubble {
     background: var(--primary-light);
     border-radius: 4px 14px 14px 14px;
-    padding: 0.55em 0.85em; font-size: 0.875rem;
-    line-height: 1.55; color: var(--text);
+    padding: 0.6em 0.9em; font-size: 0.92rem;
+    line-height: 1.6; color: var(--text);
     max-width: calc(100% - 2.2rem); word-break: break-word;
     white-space: pre-wrap;
   }
@@ -746,7 +764,7 @@
     font-family: inherit; font-size: 0.875rem; color: var(--text);
     resize: none; line-height: 1.5; transition: border-color 0.15s;
   }
-  .fC_dialog-ta:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(0,151,167,0.1); }
+  .fC_dialog-ta:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(126,87,194,0.14); }
   .fC_dialog-ta-row { display: flex; justify-content: space-between; align-items: center; }
   .fC_dialog-skip {
     background: none; border: none; color: var(--text-muted);
@@ -754,7 +772,7 @@
     min-height: 44px; padding: 0 0.5em; -webkit-tap-highlight-color: transparent;
   }
   .fC_dialog-next {
-    background: linear-gradient(135deg, var(--primary), #00acc1);
+    background: linear-gradient(135deg, var(--primary), #9575cd);
     color: #fff; border: none; border-radius: 10px;
     padding: 0.6em 1.3em; font-family: inherit; font-size: 0.88rem; font-weight: 700;
     cursor: pointer; min-height: 44px; -webkit-tap-highlight-color: transparent;
@@ -795,7 +813,7 @@
   .fC_followup-chip:hover:not(:disabled) { border-color: var(--primary); background: var(--primary-light); color: var(--primary-text); }
   .fC_followup-chip:disabled { opacity: 0.45; cursor: not-allowed; }
   .fC_followup-card {
-    background: var(--primary-light); border: 1px solid rgba(0,151,167,0.22);
+    background: var(--primary-light); border: 1px solid rgba(126,87,194,0.22);
     border-radius: var(--radius); padding: 0.9em 1em; margin-top: 0.75em;
   }
   .fC_followup-card-label {
@@ -804,7 +822,7 @@
   }
   .fC_followup-card-text {
     font-size: 0.88rem; line-height: 1.72; color: var(--text);
-    white-space: pre-wrap; word-break: break-all; margin-bottom: 0.6em;
+    white-space: pre-wrap; overflow-wrap: anywhere; margin-bottom: 0.6em;
   }
 
   /* ── ふじキュン character ───────────────── */
@@ -969,8 +987,8 @@
     電話かけ出しサポート<span class="fC_ver">v5.0.0</span>
   </div>
   <div style="display:flex;align-items:center;gap:0.4em;">
-    <button id="fC_soundBtn" class="fC_icon-btn" aria-label="効果音オン・オフ" aria-pressed="false" title="効果音" style="font-size:1rem;">🔇</button>
-    <button id="fC_cloudBtn" class="fC_icon-btn" aria-label="クラウド同期" title="クラウド同期" style="font-size:1rem;">☁️</button>
+    <button id="fC_soundBtn" class="fC_icon-btn" aria-label="効果音オン・オフ" aria-pressed="false" title="効果音"><span id="fC_soundIcon" aria-hidden="true">🔇</span><span class="fC_icon-label">音</span></button>
+    <button id="fC_cloudBtn" class="fC_icon-btn" aria-label="クラウド同期" title="クラウド同期"><span aria-hidden="true">☁️</span><span class="fC_icon-label">同期</span></button>
   </div>
 </header>
 
@@ -984,7 +1002,7 @@
            alt="ふじキュン♡" data-emoji="🌸" onerror="fujiImgErr(this,'🌸')">
     </button>
     <div class="fC_mascot-bubble">
-      <div class="fC_mascot-text" id="fC_mascotMsg" aria-live="polite">
+      <div class="fC_mascot-text" id="fC_mascotMsg">
         やあ！ふじキュン♡だキュンよ♡ 電話前の緊張、一緒に解消しようね！下の質問にこたえてくれたら、ぴったりの台本を作るキュン♡
       </div>
     </div>
@@ -1063,7 +1081,7 @@
         <span>🎤 音読練習モード</span>
         <button class="fC_prac-close" id="fC_pracClose" aria-label="練習パネルを閉じる">✕</button>
       </div>
-      <div class="fC_prac-hint">台本を見ながら声に出して読んでキュン♡ 録音→停止で声を分析するよ！</div>
+      <div class="fC_prac-hint">台本を見ながら声に出して読んでキュン♡ 録音→停止で声を分析するよ！（最大90秒）</div>
       <div class="fC_prac-script" id="fC_pracScript"></div>
       <div class="fC_prac-controls">
         <button class="fC_rec-btn" id="fC_recBtn">🎤 録音開始</button>
@@ -1439,7 +1457,8 @@
   function updateSoundBtn() {
     var b = $("fC_soundBtn");
     if (!b) return;
-    b.textContent = _sfxOn ? "🔔" : "🔇";
+    var ic = $("fC_soundIcon");
+    if (ic) ic.textContent = _sfxOn ? "🔔" : "🔇";
     b.setAttribute("aria-pressed", _sfxOn ? "true" : "false");
     b.title = _sfxOn ? "効果音：オン" : "効果音：オフ";
   }
@@ -1821,6 +1840,28 @@
 
   /* ── Practice mode ──────────────────────────── */
   var mediaRec = null, audioChunks = [], isRecording = false, _micStream = null, _cancelRec = false;
+  var _recTimer = null, _recStart = 0;
+  var REC_MAX = 90;   // 秒。Vercel 4.5MB ボディ上限対策で WAV は先頭90秒に truncate されるため録音もここで止める
+
+  function fmtSec(s) {
+    s = Math.max(0, Math.floor(s));
+    return Math.floor(s / 60) + ":" + ("0" + (s % 60)).slice(-2);
+  }
+  function stopRecTimer() { if (_recTimer) { clearInterval(_recTimer); _recTimer = null; } }
+  function startRecTimer() {
+    stopRecTimer();
+    var tick = function () {
+      var el = Math.floor((Date.now() - _recStart) / 1000);
+      if (el >= REC_MAX) {
+        toast("⏱ 上限の90秒に達したので録音を止めたキュン♡ 分析するね！", "warning", 4000);
+        stopRecording();
+        return;
+      }
+      D.recStatus.innerHTML = '<span class="fC_rec-dot"></span> 録音中 ' + fmtSec(el) + ' / ' + fmtSec(REC_MAX);
+    };
+    tick();
+    _recTimer = setInterval(tick, 250);
+  }
 
   function releaseMic() {
     if (_micStream) {
@@ -1831,6 +1872,7 @@
   // 録音中にパネルを閉じたらマイクを必ず解放する（赤い録音インジケータの残留を防ぐ）
   function abortRecording() {
     _cancelRec = true;                     // 取得待ち・解析中いずれの場合もキャンセルを必ず立てる
+    stopRecTimer();
     if (isRecording) {
       isRecording = false;
       if (mediaRec) { try { mediaRec.stop(); } catch (_) {} }
@@ -1877,9 +1919,10 @@
       };
       mediaRec.start();
       isRecording = true;
+      _recStart = Date.now();
       D.recBtn.textContent = "⏹ 録音停止";
       D.recBtn.classList.add("recording");
-      D.recStatus.innerHTML = '<span class="fC_rec-dot"></span> 録音中...';
+      startRecTimer();
       sfx("recStart"); haptic(20);
       mascot("録音中キュン♡ 台本を声に出して読んでね！終わったら停止を押してキュン！", "listen");
     }).catch(function() {
@@ -1889,6 +1932,7 @@
 
   function stopRecording() {
     if (mediaRec && isRecording) {
+      stopRecTimer();
       mediaRec.stop();
       isRecording = false;
       D.recBtn.textContent = "⏳ 分析中キュン…";
@@ -2064,7 +2108,7 @@
   }
 
   function scoreBar(label, val) {
-    var color = val >= 70 ? "#10b981" : val >= 40 ? "#f59e0b" : "#63b3ed";
+    var color = val >= 70 ? "#10b981" : val >= 40 ? "#f59e0b" : "#9575cd";
     return '<div class="fC_score-row"><span class="fC_score-label">' + label + '</span>'
       + '<div class="fC_score-bar-wrap"><div class="fC_score-bar" style="width:' + val + '%;background:' + color + '"></div></div>'
       + '<span class="fC_score-val">' + val + '%</span></div>';
@@ -2193,12 +2237,25 @@
             _sbUser = (res.data && res.data.session) ? res.data.session.user : null;
             updateCloudBtn();
             if (_sbUser) syncFromCloud();
+            else maybeCloudHint();
           });
         } catch(e) {
           console.error("[FujiCall Supabase]", e);
         }
       })
       .catch(function(e) { console.error("[FujiCall config]", e); });
+  }
+
+  // 未ログインのリピーターに、クラウド同期の存在を一度だけそっと知らせる
+  function maybeCloudHint() {
+    try {
+      if (localStorage.getItem("fujiCall_cloudHintSeen")) return;
+      if (loadStats().total < 1) return;   // 初回訪問者にはまだ出さない
+      localStorage.setItem("fujiCall_cloudHintSeen", "1");
+      setTimeout(function () {
+        toast("☁️ 右上の同期ボタンで、スマホを変えても台本を引き継げるキュン♡", "success", 5000);
+      }, 2200);
+    } catch (_) {}
   }
 
   function updateCloudBtn() {
@@ -2927,6 +2984,7 @@
     initSupabase();
     var st = loadStats();
     var lv = getLevel(st.total);
+    if (st.total > 0) { var _m = $("fC_main"); if (_m) _m.classList.add("fC_returning"); }
     var daily = [
       "今日も電話、いっしょにがんばろうねキュン♡",
       "まずは深呼吸から。ふじキュンがそばにいるキュン♡",
